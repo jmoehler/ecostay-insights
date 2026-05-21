@@ -83,13 +83,14 @@ function ManagerPage() {
       bucketSize = 30;
       count = 12;
     }
-    const arr: { label: string; co2: number; water: number }[] = [];
+    const arr: { idx: number; label: string; co2: number; water: number }[] = [];
     for (let i = count - 1; i >= 0; i--) {
       const end = todayD - i * bucketSize;
       const start = end - bucketSize + 1;
       const offset = (end - todayD) / bucketSize;
       const slice = allDays.filter((d) => d.day >= start && d.day <= end);
       arr.push({
+        idx: count - 1 - i,
         label:
           bucket === "daily"
             ? `d${offset}`
@@ -102,6 +103,16 @@ function ManagerPage() {
     }
     return arr;
   }, [allDays, bucket, simDay]);
+
+  const seriesTicks = useMemo(() => {
+    if (series.length === 0) return [] as number[];
+    const step = bucket === "daily" ? 2 : 1;
+    if (step === 1) return series.map((d) => d.idx);
+    const start = (series.length - 1) % step;
+    return series
+      .filter((_, index) => index >= start && (index - start) % step === 0)
+      .map((d) => d.idx);
+  }, [series, bucket]);
 
   // Stacked contributions
   const contributions = useMemo(() => {
@@ -169,6 +180,9 @@ function ManagerPage() {
       : cfg.savings.thermostatBaseline;
 
   const chartCommon = { stroke: "var(--eco-muted)", fontSize: 11 };
+  const kpiCo2 = formatCo2(totalCo2);
+  const kpiWater = formatWater(totalWater);
+  const kpiEur = formatEur(totalEur);
 
   return (
     <main className="mx-auto max-w-7xl space-y-6 p-6">
@@ -179,10 +193,10 @@ function ManagerPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        <Kpi icon={<Cloud size={18} />} label="CO₂ saved" value={`${Math.round(totalCo2)} kg`} />
-        <Kpi icon={<Droplet size={18} />} label="Water saved" value={`${Math.round(totalWater)} L`} />
-        <Kpi icon={<Euro size={18} />} label="€ saved" value={`€${totalEur.toFixed(2)}`} />
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Kpi icon={<Cloud size={18} />} label="CO₂ saved" value={kpiCo2} />
+        <Kpi icon={<Droplet size={18} />} label="Water saved" value={kpiWater} />
+        <Kpi icon={<Euro size={18} />} label="€ saved" value={kpiEur} />
         <Kpi
           icon={<Users size={18} />}
           label={`Active stays (${activeBackground} bg / ${activeLive} live)`}
@@ -214,9 +228,20 @@ function ManagerPage() {
           <ResponsiveContainer>
             <LineChart data={series}>
               <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="label" {...chartCommon} />
+              <XAxis
+                dataKey="idx"
+                type="number"
+                domain={[0, Math.max(0, series.length - 1)]}
+                ticks={seriesTicks}
+                tickFormatter={(v) => series[Math.round(v)]?.label ?? ""}
+                allowDecimals={false}
+                interval={0}
+                padding={{ left: 4, right: 12 }}
+                {...chartCommon}
+              />
               <YAxis {...chartCommon} />
               <Tooltip
+                labelFormatter={(v) => series[Math.round(Number(v))]?.label ?? ""}
                 contentStyle={{
                   backgroundColor: "var(--eco-surface)",
                   border: "1px solid var(--border)",
@@ -276,6 +301,42 @@ function ManagerPage() {
       </div>
     </main>
   );
+}
+
+function formatBaseNumber(value: number, maxFractionDigits = 0) {
+  return value.toLocaleString(undefined, {
+    maximumFractionDigits: maxFractionDigits,
+    minimumFractionDigits: 0,
+  });
+}
+
+function formatCo2(kg: number) {
+  if (Math.abs(kg) >= 1000) return `${formatBaseNumber(kg / 1000, 1)} t`;
+  return `${formatBaseNumber(Math.round(kg))} kg`;
+}
+
+function formatWater(liters: number) {
+  if (Math.abs(liters) >= 1000) return `${formatBaseNumber(liters / 1000, 1)} kL`;
+  return `${formatBaseNumber(Math.round(liters))} L`;
+}
+
+function formatEur(eur: number) {
+  if (Math.abs(eur) >= 1000) {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: "EUR",
+      notation: "compact",
+      compactDisplay: "short",
+      maximumFractionDigits: 1,
+      minimumFractionDigits: 0,
+    }).format(eur);
+  }
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  }).format(eur);
 }
 
 function Kpi({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
