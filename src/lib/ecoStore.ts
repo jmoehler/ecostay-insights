@@ -70,6 +70,7 @@ export function computeScore(co2: number, water: number, cfg: AppConfig) {
 // One "real" anchor: epoch ms when sim time started. Sim day index = floor((now-anchor)/dayMs).
 const ANCHOR_KEY = "hotel_eco_time_anchor_v1";
 export function getTimeAnchor(): number {
+  if (typeof window === "undefined") return Date.now();
   let v = localStorage.getItem(ANCHOR_KEY);
   if (!v) {
     const now = Date.now();
@@ -104,6 +105,14 @@ export function defaultDecisions(cfg: AppConfig): Decisions {
 }
 
 export function loadLive(cfg: AppConfig): LiveCustomer {
+  if (typeof window === "undefined") {
+    return {
+      stayStartDay: 0,
+      decisions: defaultDecisions(cfg),
+      history: [],
+      trainAdded: false,
+    };
+  }
   try {
     const raw = localStorage.getItem(LIVE_KEY);
     if (raw) {
@@ -127,6 +136,7 @@ export function loadLive(cfg: AppConfig): LiveCustomer {
 }
 
 export function saveLive(l: LiveCustomer) {
+  if (typeof window === "undefined") return;
   localStorage.setItem(LIVE_KEY, JSON.stringify(l));
   window.dispatchEvent(new CustomEvent("eco-live-change"));
 }
@@ -217,6 +227,7 @@ export function generateDummyStays(cfg: AppConfig): Stay[] {
 }
 
 export function loadStays(cfg: AppConfig): Stay[] {
+  if (typeof window === "undefined") return [];
   const raw = localStorage.getItem(STAYS_KEY);
   if (raw) {
     try {
@@ -229,6 +240,7 @@ export function loadStays(cfg: AppConfig): Stay[] {
 }
 
 export function resetAllData() {
+  if (typeof window === "undefined") return;
   localStorage.removeItem(STAYS_KEY);
   localStorage.removeItem(LIVE_KEY);
   localStorage.removeItem(ANCHOR_KEY);
@@ -241,9 +253,11 @@ export function resetAllData() {
 const ROLE_KEY = "hotel_eco_role_v1";
 export type Role = "customer" | "manager";
 export function getRole(): Role {
+  if (typeof window === "undefined") return "customer";
   return (localStorage.getItem(ROLE_KEY) as Role) || "customer";
 }
 export function setRole(r: Role) {
+  if (typeof window === "undefined") return;
   localStorage.setItem(ROLE_KEY, r);
   window.dispatchEvent(new CustomEvent("eco-role-change"));
 }
