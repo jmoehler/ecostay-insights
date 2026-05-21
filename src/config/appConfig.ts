@@ -1,0 +1,120 @@
+// Central config — single source of truth for both Customer UI and Admin panel.
+// All values persisted to localStorage. Admin writes via setConfig().
+
+export type AppConfig = {
+  savings: {
+    cleaningSkipWater: number; // L per day
+    cleaningSkipCo2: number; // kg per day
+    towelSkipWater: number;
+    towelSkipCo2: number;
+    thermostatCoefPerDegree: number; // kg CO2 saved per °C below baseline
+    thermostatBaseline: number; // °C
+    thermostatMin: number;
+    thermostatMax: number;
+    acOffCo2: number; // kg per day when AC off (vs on)
+    trainBonusCo2: number; // one-time kg
+  };
+  finance: {
+    eurPerKgCo2: number;
+    eurPerLWater: number;
+  };
+  scoreFormula: string; // expression in `co2` and `water`
+  trees: {
+    scorePerTree: number;
+    maxTrees: number;
+    startingTree: number;
+  };
+  time: {
+    secondsPerSimDay: number;
+  };
+  theme: {
+    bg: string;
+    surface: string;
+    text: string;
+    muted: string;
+    primary: string;
+    warning: string;
+  };
+};
+
+export const DEFAULT_CONFIG: AppConfig = {
+  savings: {
+    cleaningSkipWater: 12,
+    cleaningSkipCo2: 1,
+    towelSkipWater: 20,
+    towelSkipCo2: 0.5,
+    thermostatCoefPerDegree: 1,
+    thermostatBaseline: 20,
+    thermostatMin: 16,
+    thermostatMax: 28,
+    acOffCo2: 3,
+    trainBonusCo2: 200,
+  },
+  finance: {
+    eurPerKgCo2: 0.08,
+    eurPerLWater: 0.002,
+  },
+  scoreFormula: "co2 + water",
+  trees: {
+    scorePerTree: 100,
+    maxTrees: 10,
+    startingTree: 1,
+  },
+  time: {
+    secondsPerSimDay: 120,
+  },
+  theme: {
+    bg: "#1E2A38",
+    surface: "#27374D",
+    text: "#E5E9F0",
+    muted: "#9AA5B1",
+    primary: "#4ADE80",
+    warning: "#F59E0B",
+  },
+};
+
+const KEY = "hotel_eco_config_v1";
+
+export function loadConfig(): AppConfig {
+  if (typeof window === "undefined") return DEFAULT_CONFIG;
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return DEFAULT_CONFIG;
+    const parsed = JSON.parse(raw);
+    // shallow-merge nested with defaults to tolerate added fields
+    return {
+      ...DEFAULT_CONFIG,
+      ...parsed,
+      savings: { ...DEFAULT_CONFIG.savings, ...(parsed.savings ?? {}) },
+      finance: { ...DEFAULT_CONFIG.finance, ...(parsed.finance ?? {}) },
+      trees: { ...DEFAULT_CONFIG.trees, ...(parsed.trees ?? {}) },
+      time: { ...DEFAULT_CONFIG.time, ...(parsed.time ?? {}) },
+      theme: { ...DEFAULT_CONFIG.theme, ...(parsed.theme ?? {}) },
+    };
+  } catch {
+    return DEFAULT_CONFIG;
+  }
+}
+
+export function saveConfig(cfg: AppConfig) {
+  localStorage.setItem(KEY, JSON.stringify(cfg));
+  window.dispatchEvent(new CustomEvent("eco-config-change"));
+}
+
+// Safe formula evaluation. Only allows numbers, the two vars co2/water,
+// and basic math operators. No function calls, no identifiers.
+export function evalScoreFormula(formula: string, co2: number, water: number): number {
+  const cleaned = formula.replace(/\s+/g, "");
+  if (!/^[0-9co2water+\-*/().]+$/i.test(cleaned)) return co2 + water;
+  // Replace tokens
+  const expr = cleaned.replace(/co2/gi, `(${co2})`).replace(/water/gi, `(${water})`);
+  // Final safety: only digits, ops, parens, decimal
+  if (!/^[0-9+\-*/().]+$/.test(expr)) return co2 + water;
+  try {
+    // eslint-disable-next-line no-new-func
+    const v = Function(`"use strict"; return (${expr});`)();
+    return typeof v === "number" && isFinite(v) ? v : co2 + water;
+  } catch {
+    return co2 + water;
+  }
+}

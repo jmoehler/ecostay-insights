@@ -63,25 +63,35 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  /* Hotel eco-prototype palette. These are overridden at runtime
+     from appConfig (see ThemeApplier) so the Admin panel can recolor
+     the whole app live. Defaults must match config defaults. */
+  --eco-bg: #1E2A38;
+  --eco-surface: #27374D;
+  --eco-text: #E5E9F0;
+  --eco-muted: #9AA5B1;
+  --eco-primary: #4ADE80;
+  --eco-warning: #F59E0B;
+
+  --background: var(--eco-bg);
+  --foreground: var(--eco-text);
+  --card: var(--eco-surface);
+  --card-foreground: var(--eco-text);
+  --popover: var(--eco-surface);
+  --popover-foreground: var(--eco-text);
+  --primary: var(--eco-primary);
+  --primary-foreground: #0b1220;
+  --secondary: #2f4159;
+  --secondary-foreground: var(--eco-text);
+  --muted: #2f4159;
+  --muted-foreground: var(--eco-muted);
+  --accent: var(--eco-primary);
+  --accent-foreground: #0b1220;
+  --destructive: var(--eco-warning);
+  --destructive-foreground: #0b1220;
+  --border: rgba(229, 233, 240, 0.12);
+  --input: rgba(229, 233, 240, 0.18);
+  --ring: var(--eco-primary);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
