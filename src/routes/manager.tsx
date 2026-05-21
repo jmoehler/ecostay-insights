@@ -87,9 +87,15 @@ function ManagerPage() {
     for (let i = count - 1; i >= 0; i--) {
       const end = todayD - i * bucketSize;
       const start = end - bucketSize + 1;
+      const offset = (end - todayD) / bucketSize;
       const slice = allDays.filter((d) => d.day >= start && d.day <= end);
       arr.push({
-        label: bucket === "daily" ? `d${end}` : bucket === "weekly" ? `w${count - i}` : `m${count - i}`,
+        label:
+          bucket === "daily"
+            ? `d${offset}`
+            : bucket === "weekly"
+              ? `w${offset}`
+              : `m${offset}`,
         co2: Math.round(slice.reduce((s, d) => s + d.co2, 0)),
         water: Math.round(slice.reduce((s, d) => s + d.water, 0)),
       });

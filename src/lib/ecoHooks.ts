@@ -70,6 +70,7 @@ export function useSimTime(cfg: AppConfig) {
 function getInitialLive(cfg: AppConfig): LiveCustomer {
   return {
     stayStartDay: 0,
+    stayStartProgress: 0,
     decisions: defaultDecisions(cfg),
     history: [],
     trainAdded: false,

@@ -47,53 +47,6 @@ export type AppConfig = {
   };
 };
 
-const LEGACY_DEFAULT_THEME: AppConfig["theme"] = {
-  bg: "#1E2A38",
-  surface: "#27374D",
-  text: "#E5E9F0",
-  muted: "#9AA5B1",
-  primary: "#4ADE80",
-  warning: "#F59E0B",
-};
-
-function normalizeHex(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function isLegacyDefaultTheme(theme: AppConfig["theme"]) {
-  return (
-    normalizeHex(theme.bg) === normalizeHex(LEGACY_DEFAULT_THEME.bg) &&
-    normalizeHex(theme.surface) === normalizeHex(LEGACY_DEFAULT_THEME.surface) &&
-    normalizeHex(theme.text) === normalizeHex(LEGACY_DEFAULT_THEME.text) &&
-    normalizeHex(theme.muted) === normalizeHex(LEGACY_DEFAULT_THEME.muted) &&
-    normalizeHex(theme.primary) === normalizeHex(LEGACY_DEFAULT_THEME.primary) &&
-    normalizeHex(theme.warning) === normalizeHex(LEGACY_DEFAULT_THEME.warning)
-  );
-}
-
-function isTemporaryTrainBonusSavings(savings: AppConfig["savings"]) {
-  return (
-    savings.cleaningSkipWater === 12 &&
-    savings.cleaningSkipCo2 === 1 &&
-    savings.towelSkipWater === 20 &&
-    savings.towelSkipCo2 === 0.5 &&
-    savings.thermostatCoefPerDegree === 1 &&
-    savings.thermostatBaseline === 20 &&
-    savings.thermostatMin === 16 &&
-    savings.thermostatMax === 28 &&
-    savings.acOffCo2 === 3 &&
-    savings.trainBonusCo2 === 20
-  );
-}
-
-function isLegacyDefaultTrees(trees: AppConfig["trees"]) {
-  return (
-    trees.scorePerTree === 100 &&
-    trees.maxTrees === 10 &&
-    trees.startingTree === 1
-  );
-}
-
 export const DEFAULT_CONFIG: AppConfig = {
   savings: {
     cleaningSkipWater: 12,
@@ -136,7 +89,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     text: "#173127",
     muted: "#6d7f72",
     primary: "#2f8f57",
-    warning: "#d97706",
+    warning: "#d90606",
   },
 };
 
@@ -159,16 +112,6 @@ export function loadConfig(): AppConfig {
       hotel: { ...DEFAULT_CONFIG.hotel, ...(parsed.hotel ?? {}) },
       theme: { ...DEFAULT_CONFIG.theme, ...(parsed.theme ?? {}) },
     };
-    // Migrate persisted users that are still exactly on the old built-in dark defaults.
-    if (parsed.theme && isLegacyDefaultTheme(merged.theme)) {
-      merged.theme = DEFAULT_CONFIG.theme;
-    }
-    if (parsed.savings && isTemporaryTrainBonusSavings(merged.savings)) {
-      merged.savings.trainBonusCo2 = DEFAULT_CONFIG.savings.trainBonusCo2;
-    }
-    if (parsed.trees && isLegacyDefaultTrees(merged.trees)) {
-      merged.trees.startingTree = DEFAULT_CONFIG.trees.startingTree;
-    }
     return merged;
   } catch {
     return DEFAULT_CONFIG;
