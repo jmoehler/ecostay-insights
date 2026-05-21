@@ -9,6 +9,8 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { Header } from "@/components/Header";
+import { ThemeApplier } from "@/components/ThemeApplier";
 
 function NotFoundComponent() {
   return (
@@ -72,11 +74,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Verdant Stay — Hotel Environmental Impact" },
+      {
+        name: "description",
+        content: "Live prototype showing a hotel's environmental impact across guests and management.",
+      },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Verdant Stay" },
+      { property: "og:description", content: "Hotel environmental impact prototype." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
@@ -113,7 +118,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <ThemeApplier />
+      <div className="min-h-screen" style={{ backgroundColor: "var(--eco-bg)", color: "var(--eco-text)" }}>
+        <Header />
+        <Outlet />
+      </div>
     </QueryClientProvider>
   );
 }
