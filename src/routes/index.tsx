@@ -362,4 +362,3 @@ function ThermoCard({
     </div>
   );
 }
-}
