@@ -1,0 +1,88 @@
+import { Link, useRouter, useLocation } from "@tanstack/react-router";
+import { Settings, User, BarChart3, Leaf } from "lucide-react";
+import { useConfig, useSimTime } from "@/lib/ecoHooks";
+import { setRole, getRole } from "@/lib/ecoStore";
+import { useEffect, useState } from "react";
+
+export function Header() {
+  const [cfg] = useConfig();
+  const { day, clock } = useSimTime(cfg);
+  const router = useRouter();
+  const location = useLocation();
+  const [role, setLocalRole] = useState<"customer" | "manager">(() =>
+    typeof window === "undefined" ? "customer" : getRole(),
+  );
+
+  useEffect(() => {
+    const onChange = () => setLocalRole(getRole());
+    window.addEventListener("eco-role-change", onChange);
+    return () => window.removeEventListener("eco-role-change", onChange);
+  }, []);
+
+  const switchRole = (r: "customer" | "manager") => {
+    setRole(r);
+    setLocalRole(r);
+    if (r === "customer" && location.pathname !== "/") router.navigate({ to: "/" });
+    if (r === "manager" && location.pathname !== "/manager") router.navigate({ to: "/manager" });
+  };
+
+  return (
+    <header
+      className="sticky top-0 z-50 flex items-center justify-between gap-4 border-b px-6 py-3 backdrop-blur"
+      style={{
+        backgroundColor: "color-mix(in oklab, var(--eco-bg) 85%, transparent)",
+        borderColor: "var(--border)",
+      }}
+    >
+      <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
+        <Leaf size={20} style={{ color: "var(--eco-primary)" }} />
+        <span>Verdant Stay</span>
+      </Link>
+
+      <div className="flex items-center gap-3">
+        {/* Role segmented control */}
+        <div
+          className="flex items-center rounded-full p-1 text-sm"
+          style={{ backgroundColor: "var(--eco-surface)" }}
+        >
+          <button
+            onClick={() => switchRole("customer")}
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors"
+            style={{
+              backgroundColor: role === "customer" ? "var(--eco-primary)" : "transparent",
+              color: role === "customer" ? "var(--primary-foreground)" : "var(--eco-muted)",
+            }}
+          >
+            <User size={14} /> Customer
+          </button>
+          <button
+            onClick={() => switchRole("manager")}
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors"
+            style={{
+              backgroundColor: role === "manager" ? "var(--eco-primary)" : "transparent",
+              color: role === "manager" ? "var(--primary-foreground)" : "var(--eco-muted)",
+            }}
+          >
+            <BarChart3 size={14} /> Manager
+          </button>
+        </div>
+
+        <div
+          className="hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs sm:flex"
+          style={{ backgroundColor: "var(--eco-surface)", color: "var(--eco-muted)" }}
+        >
+          <span style={{ color: "var(--eco-primary)" }}>●</span>
+          Sim day {day} · {clock} left
+        </div>
+
+        <Link
+          to="/admin"
+          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors"
+          style={{ backgroundColor: "var(--eco-surface)", color: "var(--eco-text)" }}
+        >
+          <Settings size={14} /> Admin
+        </Link>
+      </div>
+    </header>
+  );
+}
