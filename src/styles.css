@@ -62,16 +62,16 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.375rem;
   /* Hotel eco-prototype palette. These are overridden at runtime
      from appConfig (see ThemeApplier) so the Admin panel can recolor
      the whole app live. Defaults must match config defaults. */
-  --eco-bg: #1E2A38;
-  --eco-surface: #27374D;
-  --eco-text: #E5E9F0;
-  --eco-muted: #9AA5B1;
-  --eco-primary: #4ADE80;
-  --eco-warning: #F59E0B;
+  --eco-bg: #f5f8f4;
+  --eco-surface: #ffffff;
+  --eco-text: #173127;
+  --eco-muted: #6d7f72;
+  --eco-primary: #2f8f57;
+  --eco-warning: #d90606;
 
   --background: var(--eco-bg);
   --foreground: var(--eco-text);
@@ -80,19 +80,19 @@
   --popover: var(--eco-surface);
   --popover-foreground: var(--eco-text);
   --primary: var(--eco-primary);
-  --primary-foreground: #0b1220;
-  --secondary: #2f4159;
+  --primary-foreground: #ffffff;
+  --secondary: #eaf2eb;
   --secondary-foreground: var(--eco-text);
-  --muted: #2f4159;
+  --muted: #edf4ee;
   --muted-foreground: var(--eco-muted);
-  --accent: var(--eco-primary);
-  --accent-foreground: #0b1220;
+  --accent: #e4f1e7;
+  --accent-foreground: var(--eco-text);
   --destructive: var(--eco-warning);
-  --destructive-foreground: #0b1220;
-  --border: rgba(229, 233, 240, 0.12);
-  --input: rgba(229, 233, 240, 0.18);
+  --destructive-foreground: #ffffff;
+  --border: rgba(23, 49, 39, 0.14);
+  --input: rgba(23, 49, 39, 0.2);
   --ring: var(--eco-primary);
-  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-1: oklch(61.003% 0.24886 27.325);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);

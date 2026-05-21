@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertTriangle, RotateCcw } from "lucide-react";
 import { AppConfig, DEFAULT_CONFIG, evalScoreFormula, saveConfig } from "@/config/appConfig";
 import { useConfig } from "@/lib/ecoHooks";
-import { resetAllData } from "@/lib/ecoStore";
+import { resetAllData, resetLiveCustomer } from "@/lib/ecoStore";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -19,6 +19,10 @@ function AdminPage() {
   const [cfg] = useConfig();
   const [draft, setDraft] = useState<AppConfig>(cfg);
 
+  useEffect(() => {
+    setDraft(cfg);
+  }, [cfg]);
+
   // Always autosave on change
   const update = (next: AppConfig) => {
     setDraft(next);
@@ -33,6 +37,8 @@ function AdminPage() {
     update({ ...draft, trees: { ...draft.trees, [k]: v } });
   const setTime = (v: number) =>
     update({ ...draft, time: { secondsPerSimDay: v } });
+  const setHotel = <K extends keyof AppConfig["hotel"]>(k: K, v: AppConfig["hotel"][K]) =>
+    update({ ...draft, hotel: { ...draft.hotel, [k]: v } });
   const setTheme = <K extends keyof AppConfig["theme"]>(k: K, v: string) =>
     update({ ...draft, theme: { ...draft.theme, [k]: v } });
 
@@ -119,6 +125,43 @@ function AdminPage() {
         </Field>
       </Section>
 
+      <Section title="Background guest simulation">
+        <Field label="Enable simulated background guests">
+          <label className="inline-flex items-center gap-2 rounded-md px-2 py-2" style={{ backgroundColor: "var(--eco-bg)" }}>
+            <input
+              type="checkbox"
+              checked={draft.hotel.backgroundEnabled}
+              onChange={(e) => setHotel("backgroundEnabled", e.target.checked)}
+            />
+            <span className="text-sm">Enabled</span>
+          </label>
+        </Field>
+        <Field label="Total rooms in hotel">
+          <NumberInput value={draft.hotel.totalRooms} onChange={(v) => setHotel("totalRooms", Math.max(0, Math.round(v)))} min={0} />
+        </Field>
+        <Field label="Target occupancy (%)">
+          <NumberInput value={draft.hotel.occupancyPct} onChange={(v) => setHotel("occupancyPct", Math.max(1, Math.min(100, v)))} min={1} max={100} />
+        </Field>
+        <Field label="Occupancy variability (%)">
+          <NumberInput value={draft.hotel.occupancyVariancePct} onChange={(v) => setHotel("occupancyVariancePct", Math.max(0, Math.min(30, v)))} min={0} max={30} />
+        </Field>
+        <Field label="Average stay length (days)">
+          <NumberInput value={draft.hotel.avgStayDays} onChange={(v) => setHotel("avgStayDays", Math.max(1, Math.min(14, v)))} min={1} max={14} step={0.1} />
+        </Field>
+        <Field label="Historical days stored">
+          <NumberInput value={draft.hotel.lookbackDays} onChange={(v) => setHotel("lookbackDays", Math.max(30, Math.min(365, Math.round(v))))} min={30} max={365} />
+        </Field>
+        <Field label="Eco profile share (%)">
+          <NumberInput value={draft.hotel.ecoSharePct} onChange={(v) => setHotel("ecoSharePct", Math.max(0, Math.min(100, v)))} min={0} max={100} />
+        </Field>
+        <Field label="Mixed profile share (%)">
+          <NumberInput value={draft.hotel.mixedSharePct} onChange={(v) => setHotel("mixedSharePct", Math.max(0, Math.min(100, v)))} min={0} max={100} />
+        </Field>
+        <div className="text-xs" style={{ color: "var(--eco-muted)" }}>
+          Conventional share: {Math.max(0, 100 - draft.hotel.ecoSharePct - draft.hotel.mixedSharePct).toFixed(1)}%
+        </div>
+      </Section>
+
       <Section title="Theme">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {(Object.keys(draft.theme) as (keyof AppConfig["theme"])[]).map((k) => (
@@ -148,6 +191,19 @@ function AdminPage() {
       </Section>
 
       <Section title="Danger zone">
+        <button
+          onClick={() => resetLiveCustomer(cfg)}
+          className="flex items-center justify-center gap-2 rounded-sm border py-3 text-sm font-medium transition-colors"
+          style={{
+            backgroundColor: "var(--background)",
+            color: "var(--eco-muted)",
+            borderColor: "var(--border)",
+          }}
+        >
+          <RotateCcw size={16} />
+          Reset customer / New stay
+        </button>
+
         <div
           className="flex items-start gap-3 rounded-xl p-4"
           style={{ backgroundColor: "color-mix(in oklab, var(--eco-warning) 12%, transparent)" }}
@@ -156,7 +212,7 @@ function AdminPage() {
           <div className="flex-1">
             <div className="font-medium">Reset all data</div>
             <div className="text-xs" style={{ color: "var(--eco-muted)" }}>
-              Clears the live customer, all 50 dummy stays, and resets every config value.
+              Clears the live customer, background simulation state, and resets every config value.
             </div>
           </div>
           <button
@@ -201,16 +257,22 @@ function NumberInput({
   value,
   onChange,
   step = 1,
+  min,
+  max,
 }: {
   value: number;
   onChange: (v: number) => void;
   step?: number;
+  min?: number;
+  max?: number;
 }) {
   return (
     <input
       type="number"
       value={value}
       step={step}
+      min={min}
+      max={max}
       onChange={(e) => {
         const v = parseFloat(e.target.value);
         if (!isNaN(v)) onChange(v);

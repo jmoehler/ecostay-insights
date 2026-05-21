@@ -27,6 +27,16 @@ export type AppConfig = {
   time: {
     secondsPerSimDay: number;
   };
+  hotel: {
+    backgroundEnabled: boolean;
+    totalRooms: number;
+    occupancyPct: number;
+    occupancyVariancePct: number;
+    avgStayDays: number;
+    lookbackDays: number;
+    ecoSharePct: number;
+    mixedSharePct: number;
+  };
   theme: {
     bg: string;
     surface: string;
@@ -36,6 +46,30 @@ export type AppConfig = {
     warning: string;
   };
 };
+
+const LEGACY_DEFAULT_THEME: AppConfig["theme"] = {
+  bg: "#1E2A38",
+  surface: "#27374D",
+  text: "#E5E9F0",
+  muted: "#9AA5B1",
+  primary: "#4ADE80",
+  warning: "#F59E0B",
+};
+
+function normalizeHex(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function isLegacyDefaultTheme(theme: AppConfig["theme"]) {
+  return (
+    normalizeHex(theme.bg) === normalizeHex(LEGACY_DEFAULT_THEME.bg) &&
+    normalizeHex(theme.surface) === normalizeHex(LEGACY_DEFAULT_THEME.surface) &&
+    normalizeHex(theme.text) === normalizeHex(LEGACY_DEFAULT_THEME.text) &&
+    normalizeHex(theme.muted) === normalizeHex(LEGACY_DEFAULT_THEME.muted) &&
+    normalizeHex(theme.primary) === normalizeHex(LEGACY_DEFAULT_THEME.primary) &&
+    normalizeHex(theme.warning) === normalizeHex(LEGACY_DEFAULT_THEME.warning)
+  );
+}
 
 export const DEFAULT_CONFIG: AppConfig = {
   savings: {
@@ -63,13 +97,23 @@ export const DEFAULT_CONFIG: AppConfig = {
   time: {
     secondsPerSimDay: 120,
   },
+  hotel: {
+    backgroundEnabled: true,
+    totalRooms: 80,
+    occupancyPct: 92,
+    occupancyVariancePct: 6,
+    avgStayDays: 3,
+    lookbackDays: 120,
+    ecoSharePct: 30,
+    mixedSharePct: 45,
+  },
   theme: {
-    bg: "#1E2A38",
-    surface: "#27374D",
-    text: "#E5E9F0",
-    muted: "#9AA5B1",
-    primary: "#4ADE80",
-    warning: "#F59E0B",
+    bg: "#f5f8f4",
+    surface: "#ffffff",
+    text: "#173127",
+    muted: "#6d7f72",
+    primary: "#2f8f57",
+    warning: "#d97706",
   },
 };
 
@@ -82,15 +126,21 @@ export function loadConfig(): AppConfig {
     if (!raw) return DEFAULT_CONFIG;
     const parsed = JSON.parse(raw);
     // shallow-merge nested with defaults to tolerate added fields
-    return {
+    const merged: AppConfig = {
       ...DEFAULT_CONFIG,
       ...parsed,
       savings: { ...DEFAULT_CONFIG.savings, ...(parsed.savings ?? {}) },
       finance: { ...DEFAULT_CONFIG.finance, ...(parsed.finance ?? {}) },
       trees: { ...DEFAULT_CONFIG.trees, ...(parsed.trees ?? {}) },
       time: { ...DEFAULT_CONFIG.time, ...(parsed.time ?? {}) },
+      hotel: { ...DEFAULT_CONFIG.hotel, ...(parsed.hotel ?? {}) },
       theme: { ...DEFAULT_CONFIG.theme, ...(parsed.theme ?? {}) },
     };
+    // Migrate persisted users that are still exactly on the old built-in dark defaults.
+    if (parsed.theme && isLegacyDefaultTheme(merged.theme)) {
+      merged.theme = DEFAULT_CONFIG.theme;
+    }
+    return merged;
   } catch {
     return DEFAULT_CONFIG;
   }

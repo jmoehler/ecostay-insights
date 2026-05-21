@@ -94,10 +94,23 @@ export function getSimDayProgress(cfg: AppConfig): number {
 // ===== Live customer =====
 const LIVE_KEY = "hotel_eco_live_customer_v1";
 
-export function defaultDecisions(cfg: AppConfig): Decisions {
+export type CustomerViewMode = "green" | "conventional";
+
+export function getSkipDefaultsForView(view: CustomerViewMode) {
+  const shouldSkipByDefault = view === "green";
   return {
-    skipCleaning: false,
-    skipTowels: false,
+    skipCleaning: shouldSkipByDefault,
+    skipTowels: shouldSkipByDefault,
+  };
+}
+
+export function defaultDecisions(
+  cfg: AppConfig,
+  view: CustomerViewMode = "green",
+): Decisions {
+  const skipDefaults = getSkipDefaultsForView(view);
+  return {
+    ...skipDefaults,
     thermostat: cfg.savings.thermostatBaseline,
     acOn: false,
     arrivedByTrain: true,
@@ -119,7 +132,7 @@ export function loadLive(cfg: AppConfig): LiveCustomer {
       const p = JSON.parse(raw);
       return {
         stayStartDay: p.stayStartDay ?? getSimDay(cfg),
-        decisions: { ...defaultDecisions(cfg), ...(p.decisions ?? {}) },
+        decisions: { ...defaultDecisions(cfg, getCustomerView()), ...(p.decisions ?? {}) },
         history: Array.isArray(p.history) ? p.history : [],
         trainAdded: !!p.trainAdded,
       };
@@ -127,7 +140,7 @@ export function loadLive(cfg: AppConfig): LiveCustomer {
   } catch {}
   const fresh: LiveCustomer = {
     stayStartDay: getSimDay(cfg),
-    decisions: defaultDecisions(cfg),
+    decisions: defaultDecisions(cfg, getCustomerView()),
     history: [],
     trainAdded: false,
   };
@@ -144,7 +157,7 @@ export function saveLive(l: LiveCustomer) {
 export function resetLiveCustomer(cfg: AppConfig) {
   const fresh: LiveCustomer = {
     stayStartDay: getSimDay(cfg),
-    decisions: defaultDecisions(cfg),
+    decisions: defaultDecisions(cfg, getCustomerView()),
     history: [],
     trainAdded: false,
   };
@@ -152,12 +165,17 @@ export function resetLiveCustomer(cfg: AppConfig) {
   return fresh;
 }
 
-// ===== Dummy stays =====
+// ===== Background hotel stays =====
 const STAYS_KEY = "hotel_eco_stays_v1";
 
 function rand(seed: () => number, min: number, max: number) {
   return min + seed() * (max - min);
 }
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
 function mulberry32(a: number) {
   return function () {
     let t = (a += 0x6d2b79f5);
@@ -167,76 +185,164 @@ function mulberry32(a: number) {
   };
 }
 
-export function generateDummyStays(cfg: AppConfig): Stay[] {
-  const seed = mulberry32(42);
-  const today = getSimDay(cfg);
-  const stays: Stay[] = [];
-  for (let i = 0; i < 50; i++) {
-    const r = seed();
-    const profile: Stay["profile"] = r < 0.3 ? "eco" : r < 0.6 ? "conventional" : "mixed";
-    const length = Math.max(1, Math.floor(rand(seed, 1, 10)));
-    const startOffset = Math.floor(rand(seed, 0, 30));
-    const startDay = today - startOffset;
-    const stay: Stay = { id: `dummy-${i}`, startDay, lengthDays: length, profile, days: [] };
-    const train =
-      profile === "eco" ? seed() < 0.85 : profile === "conventional" ? seed() < 0.05 : seed() < 0.4;
-    for (let day = 0; day < length; day++) {
-      let d: Decisions;
-      if (profile === "eco") {
-        d = {
-          skipCleaning: seed() < 0.85,
-          skipTowels: seed() < 0.8,
-          thermostat: Math.round(rand(seed, 17, 19)),
-          acOn: false,
-          arrivedByTrain: train,
-        };
-      } else if (profile === "conventional") {
-        d = {
-          skipCleaning: false,
-          skipTowels: false,
-          thermostat: Math.round(rand(seed, 21, 24)),
-          acOn: true,
-          arrivedByTrain: train,
-        };
-      } else {
-        d = {
-          skipCleaning: seed() < 0.4,
-          skipTowels: seed() < 0.5,
-          thermostat: Math.round(rand(seed, 19, 22)),
-          acOn: seed() < 0.5,
-          arrivedByTrain: train,
-        };
-      }
-      const { co2, water } = computeDailySavings(d, cfg);
-      stay.days.push({
-        day: startDay + day,
-        co2: co2 + (day === 0 && train ? cfg.savings.trainBonusCo2 : 0),
-        water,
-        decisions: {
-          cleaningSkipped: d.skipCleaning,
-          towelsSkipped: d.skipTowels,
-          thermostat: d.thermostat,
-          acOff: !d.acOn,
-          train: day === 0 && train,
-        },
-      });
-    }
-    stays.push(stay);
-  }
-  return stays;
+function hashSeed(cfg: AppConfig) {
+  const h = cfg.hotel;
+  const s = cfg.savings;
+  return (
+    1 +
+    h.totalRooms * 104729 +
+    Math.round(h.occupancyPct * 100) * 193 +
+    Math.round(h.avgStayDays * 100) * 389 +
+    Math.round(s.thermostatBaseline * 10) * 997
+  );
 }
 
-export function loadStays(cfg: AppConfig): Stay[] {
-  if (typeof window === "undefined") return [];
-  const raw = localStorage.getItem(STAYS_KEY);
-  if (raw) {
-    try {
-      return JSON.parse(raw);
-    } catch {}
+function pickProfile(rng: () => number, cfg: AppConfig): Stay["profile"] {
+  const eco = clamp(cfg.hotel.ecoSharePct, 0, 100);
+  const mixed = clamp(cfg.hotel.mixedSharePct, 0, 100);
+  const sum = eco + mixed;
+  const ecoNorm = sum > 100 ? (eco / sum) * 100 : eco;
+  const mixedNorm = sum > 100 ? (mixed / sum) * 100 : mixed;
+  const roll = rng() * 100;
+  if (roll < ecoNorm) return "eco";
+  if (roll < ecoNorm + mixedNorm) return "mixed";
+  return "conventional";
+}
+
+function sampleStayLength(rng: () => number, cfg: AppConfig) {
+  const avg = clamp(cfg.hotel.avgStayDays, 1, 14);
+  const min = Math.max(1, Math.floor(avg * 0.5));
+  const max = Math.max(min + 1, Math.ceil(avg * 2.1));
+  return Math.max(1, Math.round(rand(rng, min, max)));
+}
+
+function decisionsForProfile(
+  profile: Stay["profile"],
+  rng: () => number,
+  cfg: AppConfig,
+): Decisions {
+  const base = cfg.savings.thermostatBaseline;
+  if (profile === "eco") {
+    return {
+      skipCleaning: rng() < 0.8,
+      skipTowels: rng() < 0.82,
+      thermostat: Math.round(rand(rng, base - 2.5, base - 0.5)),
+      acOn: rng() < 0.15,
+      arrivedByTrain: rng() < 0.62,
+    };
   }
-  const seeded = generateDummyStays(cfg);
-  localStorage.setItem(STAYS_KEY, JSON.stringify(seeded));
-  return seeded;
+  if (profile === "conventional") {
+    return {
+      skipCleaning: rng() < 0.08,
+      skipTowels: rng() < 0.18,
+      thermostat: Math.round(rand(rng, base + 1, base + 4)),
+      acOn: rng() < 0.82,
+      arrivedByTrain: rng() < 0.1,
+    };
+  }
+  return {
+    skipCleaning: rng() < 0.42,
+    skipTowels: rng() < 0.55,
+    thermostat: Math.round(rand(rng, base - 1, base + 2)),
+    acOn: rng() < 0.45,
+    arrivedByTrain: rng() < 0.28,
+  };
+}
+
+function targetOccupancyRooms(day: number, cfg: AppConfig, rng: () => number) {
+  const h = cfg.hotel;
+  const dow = ((day % 7) + 7) % 7;
+  const weekendBump = dow === 5 || dow === 6 ? 3 : dow === 0 ? 1 : 0;
+  const midweekDip = dow === 2 ? -1 : 0;
+  const seasonalWave = Math.sin(day / 18) * 2.5;
+  const noise = rand(rng, -h.occupancyVariancePct, h.occupancyVariancePct);
+  const pct = clamp(
+    h.occupancyPct + weekendBump + midweekDip + seasonalWave + noise,
+    45,
+    99,
+  );
+  return clamp(Math.round((h.totalRooms * pct) / 100), 0, h.totalRooms);
+}
+
+export function generateBackgroundStays(cfg: AppConfig, simDay: number): Stay[] {
+  if (!cfg.hotel.backgroundEnabled || cfg.hotel.totalRooms <= 0) return [];
+  const rng = mulberry32(hashSeed(cfg));
+  const lookbackDays = Math.max(30, Math.round(cfg.hotel.lookbackDays));
+  const recordStart = simDay - lookbackDays + 1;
+  const warmupDays = Math.max(14, Math.ceil(cfg.hotel.avgStayDays * 3));
+  const simulationStart = recordStart - warmupDays;
+  const stays: Stay[] = [];
+  const rooms: Array<{ stay: Stay; remainingDays: number; train: boolean } | null> =
+    Array.from({ length: Math.max(0, Math.round(cfg.hotel.totalRooms)) }, () => null);
+  let stayCounter = 0;
+
+  for (let day = simulationStart; day <= simDay; day++) {
+    const targetRooms = targetOccupancyRooms(day, cfg, rng);
+    let occupied = rooms.reduce((n, r) => n + (r ? 1 : 0), 0);
+    const toCheckIn = Math.max(0, targetRooms - occupied);
+
+    if (toCheckIn > 0) {
+      const emptyIndices: number[] = [];
+      for (let i = 0; i < rooms.length; i++) {
+        if (!rooms[i]) emptyIndices.push(i);
+      }
+      for (let i = 0; i < Math.min(toCheckIn, emptyIndices.length); i++) {
+        const roomIndex = emptyIndices[i];
+        const profile = pickProfile(rng, cfg);
+        const lengthDays = sampleStayLength(rng, cfg);
+        const trainProb =
+          profile === "eco" ? 0.62 : profile === "mixed" ? 0.28 : 0.1;
+        const train = rng() < trainProb;
+        const stay: Stay = {
+          id: `bg-${day}-${stayCounter++}`,
+          startDay: day,
+          lengthDays,
+          profile,
+          days: [],
+        };
+        rooms[roomIndex] = { stay, remainingDays: lengthDays, train };
+        stays.push(stay);
+      }
+      occupied = rooms.reduce((n, r) => n + (r ? 1 : 0), 0);
+    }
+
+    if (occupied === 0) continue;
+    for (let i = 0; i < rooms.length; i++) {
+      const room = rooms[i];
+      if (!room) continue;
+      const d = decisionsForProfile(room.stay.profile, rng, cfg);
+      const { co2, water } = computeDailySavings(d, cfg);
+      if (day >= recordStart) {
+        room.stay.days.push({
+          day,
+          co2: co2 + (day === room.stay.startDay && room.train ? cfg.savings.trainBonusCo2 : 0),
+          water,
+          decisions: {
+            cleaningSkipped: d.skipCleaning,
+            towelsSkipped: d.skipTowels,
+            thermostat: d.thermostat,
+            acOff: !d.acOn,
+            train: day === room.stay.startDay && room.train,
+          },
+        });
+      }
+      room.remainingDays -= 1;
+      if (room.remainingDays <= 0) {
+        rooms[i] = null;
+      }
+    }
+  }
+
+  return stays.filter((s) => s.days.length > 0 || s.startDay + s.lengthDays > simDay);
+}
+
+export function generateDummyStays(cfg: AppConfig): Stay[] {
+  return generateBackgroundStays(cfg, getSimDay(cfg));
+}
+
+export function loadStays(cfg: AppConfig, simDay = getSimDay(cfg)): Stay[] {
+  if (typeof window === "undefined") return [];
+  return generateBackgroundStays(cfg, simDay);
 }
 
 export function resetAllData() {
@@ -260,4 +366,19 @@ export function setRole(r: Role) {
   if (typeof window === "undefined") return;
   localStorage.setItem(ROLE_KEY, r);
   window.dispatchEvent(new CustomEvent("eco-role-change"));
+}
+
+const CUSTOMER_VIEW_KEY = "hotel_eco_customer_view_v1";
+
+export function getCustomerView(): CustomerViewMode {
+  if (typeof window === "undefined") return "green";
+  return localStorage.getItem(CUSTOMER_VIEW_KEY) === "conventional"
+    ? "conventional"
+    : "green";
+}
+
+export function setCustomerView(v: CustomerViewMode) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(CUSTOMER_VIEW_KEY, v);
+  window.dispatchEvent(new CustomEvent("eco-customer-view-change"));
 }

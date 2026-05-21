@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { AppConfig, loadConfig } from "@/config/appConfig";
+import { AppConfig, DEFAULT_CONFIG, loadConfig } from "@/config/appConfig";
 import {
+  defaultDecisions,
   LiveCustomer,
   Role,
   computeDailySavings,
+  getCustomerView,
   getRole,
+  getSkipDefaultsForView,
   getSimDay,
   getSimDayProgress,
   loadLive,
@@ -14,8 +17,9 @@ import {
 } from "@/lib/ecoStore";
 
 export function useConfig(): [AppConfig, (c: AppConfig) => void] {
-  const [cfg, setCfg] = useState<AppConfig>(() => loadConfig());
+  const [cfg, setCfg] = useState<AppConfig>(DEFAULT_CONFIG);
   useEffect(() => {
+    setCfg(loadConfig());
     const onChange = () => setCfg(loadConfig());
     window.addEventListener("eco-config-change", onChange);
     return () => window.removeEventListener("eco-config-change", onChange);
@@ -24,10 +28,9 @@ export function useConfig(): [AppConfig, (c: AppConfig) => void] {
 }
 
 export function useRoleState(): [Role, () => void] {
-  const [role, setR] = useState<Role>(() =>
-    typeof window === "undefined" ? "customer" : getRole(),
-  );
+  const [role, setR] = useState<Role>("customer");
   useEffect(() => {
+    setR(getRole());
     const onChange = () => setR(getRole());
     window.addEventListener("eco-role-change", onChange);
     return () => window.removeEventListener("eco-role-change", onChange);
@@ -37,29 +40,46 @@ export function useRoleState(): [Role, () => void] {
 
 // Live ticker: drives sim-day state, commits days into live history.
 export function useSimTime(cfg: AppConfig) {
+  const [hydrated, setHydrated] = useState(false);
   const [, force] = useState(0);
   useEffect(() => {
+    setHydrated(true);
     const id = setInterval(() => force((n) => n + 1), 250);
     return () => clearInterval(id);
   }, []);
+  if (!hydrated) {
+    return {
+      day: 0,
+      progress: 0,
+      remainingSec: cfg.time.secondsPerSimDay,
+      clock: "24h",
+    };
+  }
   const day = getSimDay(cfg);
   const progress = getSimDayProgress(cfg);
   const remainingSec = Math.max(
     0,
     Math.floor(cfg.time.secondsPerSimDay * (1 - progress)),
   );
-  const hh = Math.floor((1 - progress) * 24)
+  const hoursLeft = Math.floor((1 - progress) * 24)
     .toString()
     .padStart(2, "0");
-  const mm = Math.floor(((1 - progress) * 24 * 60) % 60)
-    .toString()
-    .padStart(2, "0");
-  return { day, progress, remainingSec, clock: `${hh}:${mm}` };
+  return { day, progress, remainingSec, clock: `${hoursLeft}h` };
+}
+
+function getInitialLive(cfg: AppConfig): LiveCustomer {
+  return {
+    stayStartDay: 0,
+    decisions: defaultDecisions(cfg),
+    history: [],
+    trainAdded: false,
+  };
 }
 
 export function useLiveCustomer(cfg: AppConfig) {
-  const [live, setLive] = useState<LiveCustomer>(() => loadLive(cfg));
+  const [live, setLive] = useState<LiveCustomer>(() => getInitialLive(cfg));
   useEffect(() => {
+    setLive(loadLive(cfg));
     const onChange = () => setLive(loadLive(cfg));
     window.addEventListener("eco-live-change", onChange);
     return () => window.removeEventListener("eco-live-change", onChange);
@@ -67,17 +87,16 @@ export function useLiveCustomer(cfg: AppConfig) {
   return [live, (l: LiveCustomer) => saveLive(l)] as const;
 }
 
-export function useStays(cfg: AppConfig): Stay[] {
-  const [stays, setStays] = useState<Stay[]>(() => loadStays(cfg));
+export function useStays(cfg: AppConfig, simDay: number): Stay[] {
+  const [stays, setStays] = useState<Stay[]>([]);
   useEffect(() => {
-    const onChange = () => setStays(loadStays(cfg));
+    setStays(loadStays(cfg, simDay));
+    const onChange = () => setStays(loadStays(cfg, simDay));
     window.addEventListener("eco-config-change", onChange);
-    window.addEventListener("eco-live-change", onChange);
     return () => {
       window.removeEventListener("eco-config-change", onChange);
-      window.removeEventListener("eco-live-change", onChange);
     };
-  }, [cfg]);
+  }, [cfg, simDay]);
   return stays;
 }
 
@@ -120,8 +139,7 @@ export function useLiveCommitter(cfg: AppConfig) {
         // reset transient toggles for new day
         updated.decisions = {
           ...updated.decisions,
-          skipCleaning: false,
-          skipTowels: false,
+          ...getSkipDefaultsForView(getCustomerView()),
           thermostat: cfg.savings.thermostatBaseline,
           acOn: false,
         };

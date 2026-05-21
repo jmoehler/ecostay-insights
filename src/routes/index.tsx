@@ -1,15 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Droplet,
   Cloud,
   Train,
   Thermometer,
   Wind,
-  Sparkles,
   BedDouble,
   Shirt,
-  RotateCcw,
 } from "lucide-react";
 import { TreeField } from "@/components/TreeField";
 import {
@@ -21,20 +19,34 @@ import {
 import {
   computeDailySavings,
   computeScore,
-  resetLiveCustomer,
+  getCustomerView,
+  getSkipDefaultsForView,
+  setCustomerView,
 } from "@/lib/ecoStore";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
+type CustomerView = "green" | "conventional";
+
 function Index() {
   const [cfg] = useConfig();
   useLiveCommitter(cfg);
   const [live, setLive] = useLiveCustomer(cfg);
+  const [view, setView] = useState<CustomerView>("green");
+  useEffect(() => {
+    setView(getCustomerView());
+  }, []);
   const { progress } = useSimTime(cfg);
+  const isGreenView = view === "green";
+  const accentColor = isGreenView ? "var(--eco-primary)" : "#1f3b73";
 
-  const todayLive = computeDailySavings(live.decisions, cfg);
+  const todayProjected = computeDailySavings(live.decisions, cfg);
+  const todayLive = {
+    co2: todayProjected.co2 * progress,
+    water: todayProjected.water * progress,
+  };
   const totalCo2 =
     live.history.reduce((s, d) => s + d.co2, 0) + todayLive.co2;
   const totalWater =
@@ -55,114 +67,125 @@ function Index() {
   const impact = useMemo(() => {
     const s = cfg.savings;
     return {
-      cleaning: `+${s.cleaningSkipWater} L · +${s.cleaningSkipCo2} kg CO₂ / day`,
-      towels: `+${s.towelSkipWater} L · +${s.towelSkipCo2} kg CO₂ / day`,
+      cleaning: `If skipped: +${s.cleaningSkipWater} L · +${s.cleaningSkipCo2} kg CO₂ / day`,
+      towels: `If skipped: +${s.towelSkipWater} L · +${s.towelSkipCo2} kg CO₂ / day`,
       acOff: `+${s.acOffCo2} kg CO₂ / day`,
     };
   }, [cfg]);
 
+  const applyViewDefaults = (nextView: CustomerView) => {
+    setView(nextView);
+    setCustomerView(nextView);
+    setLive({
+      ...live,
+      decisions: {
+        ...live.decisions,
+        ...getSkipDefaultsForView(nextView),
+      },
+    });
+  };
+
   return (
-    <main className="flex min-h-[calc(100vh-64px)] items-center justify-center p-6">
-      {/* iPad bezel */}
-      <div
-        className="relative rounded-[44px] p-3 shadow-2xl"
+    <main className="mx-auto max-w-6xl p-6">
+      <section
+        className="relative overflow-hidden rounded-md border shadow-sm"
         style={{
-          width: "min(100%, 1180px)",
-          background:
-            "linear-gradient(145deg, #0e1620, #0a1018)",
-          boxShadow:
-            "0 30px 80px -20px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.04)",
+          backgroundColor: "var(--eco-surface)",
+          borderColor: "var(--border)",
         }}
       >
-        <div
-          className="relative overflow-hidden rounded-[32px]"
-          style={{
-            width: "100%",
-            height: 820,
-            backgroundColor: "var(--eco-bg)",
-          }}
-        >
           {/* sim-day progress bar */}
           <div
             className="absolute left-0 right-0 top-0 h-1"
-            style={{ backgroundColor: "color-mix(in oklab, var(--eco-primary) 25%, transparent)" }}
+            style={{ backgroundColor: `color-mix(in oklab, ${accentColor} 15%, white)` }}
           >
             <div
               className="h-full"
               style={{
                 width: `${progress * 100}%`,
-                backgroundColor: "var(--eco-primary)",
+                backgroundColor: accentColor,
                 transition: "width 250ms linear",
               }}
             />
           </div>
 
-          <div className="flex h-full flex-col gap-4 overflow-y-auto p-6">
-            {/* Tree field */}
-            <TreeField score={score} cfg={cfg} />
+          <div className="flex flex-col gap-4 p-6">
+            {isGreenView ? (
+              <>
+                {/* Tree field */}
+                <TreeField score={score} cfg={cfg} />
 
-            {/* Stat tiles */}
-            <div className="grid grid-cols-2 gap-4">
-              <StatTile
-                label="CO₂ saved"
-                value={displayCo2.toFixed(1)}
-                unit="kg"
-                icon={<Cloud size={22} />}
-                accent="primary"
-              />
-              <StatTile
-                label="Water saved"
-                value={Math.round(displayWater).toString()}
-                unit="L"
-                icon={<Droplet size={22} />}
-                accent="primary"
-              />
-            </div>
-
-            {/* Train card */}
-            <Card>
-              <div className="flex items-center gap-4">
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: "color-mix(in oklab, var(--eco-primary) 20%, transparent)", color: "var(--eco-primary)" }}
-                >
-                  <Train size={22} />
+                {/* Stat tiles */}
+                <div className="grid grid-cols-2 gap-4">
+                  <StatTile
+                    label="CO₂ saved"
+                    value={displayCo2.toFixed(1)}
+                    unit="kg"
+                    icon={<Cloud size={22} />}
+                    accentColor={accentColor}
+                  />
+                  <StatTile
+                    label="Water saved"
+                    value={Math.round(displayWater).toString()}
+                    unit="L"
+                    icon={<Droplet size={22} />}
+                    accentColor={accentColor}
+                  />
                 </div>
-                <div className="flex-1">
-                  <div className="font-medium">Arrived by train</div>
-                  <div className="text-xs" style={{ color: "var(--eco-muted)" }}>
-                    From booking data.
+
+                {/* Train card */}
+                <Card>
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="flex h-12 w-12 items-center justify-center rounded-sm"
+                      style={{ backgroundColor: `color-mix(in oklab, ${accentColor} 12%, white)`, color: accentColor }}
+                    >
+                      <Train size={22} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">Arrived by train</div>
+                      <div className="text-xs" style={{ color: "var(--eco-muted)" }}>
+                        From booking data.
+                      </div>
+                    </div>
+                    <div
+                      className="rounded-sm border px-3 py-1 text-sm font-medium"
+                      style={{ backgroundColor: `color-mix(in oklab, ${accentColor} 8%, white)`, color: accentColor, borderColor: `color-mix(in oklab, ${accentColor} 35%, white)` }}
+                    >
+                      +{cfg.savings.trainBonusCo2} kg CO₂
+                    </div>
                   </div>
-                </div>
-                <div
-                  className="rounded-full px-3 py-1 text-sm font-medium"
-                  style={{ backgroundColor: "color-mix(in oklab, var(--eco-primary) 18%, transparent)", color: "var(--eco-primary)" }}
-                >
-                  +{cfg.savings.trainBonusCo2} kg CO₂
-                </div>
-              </div>
-            </Card>
+                </Card>
+              </>
+            ) : null}
 
             {/* Decisions */}
             <div className="grid grid-cols-2 gap-4">
               <ToggleCard
                 icon={<BedDouble size={22} />}
-                title="Skip room cleaning"
+                title="Request room cleaning"
                 tooltip={impact.cleaning}
-                active={live.decisions.skipCleaning}
+                active={!live.decisions.skipCleaning}
+                activeLabel="Requested"
+                inactiveLabel="Skipped"
+                accentColor={accentColor}
                 onToggle={() => toggle("skipCleaning")}
               />
               <ToggleCard
                 icon={<Shirt size={22} />}
-                title="Skip towel change"
+                title="Request towel change"
                 tooltip={impact.towels}
-                active={live.decisions.skipTowels}
+                active={!live.decisions.skipTowels}
+                activeLabel="Requested"
+                inactiveLabel="Skipped"
+                accentColor={accentColor}
                 onToggle={() => toggle("skipTowels")}
               />
               <ThermoCard
                 value={live.decisions.thermostat}
                 onChange={setTemp}
                 cfg={cfg}
+                accentColor={accentColor}
               />
               <ToggleCard
                 icon={<Wind size={22} />}
@@ -175,24 +198,40 @@ function Index() {
                 active={!live.decisions.acOn}
                 activeLabel="Off"
                 inactiveLabel="On"
+                accentColor={accentColor}
                 onToggle={() => toggle("acOn")}
               />
             </div>
 
-            <button
-              onClick={() => resetLiveCustomer(cfg)}
-              className="mt-auto flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-colors"
-              style={{
-                backgroundColor: "var(--eco-surface)",
-                color: "var(--eco-muted)",
-              }}
-            >
-              <RotateCcw size={16} />
-              Reset customer / New stay
-            </button>
+            <div className="mt-1 flex justify-center">
+              <div
+                className="inline-flex items-center rounded-sm border p-1"
+                style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}
+              >
+                <button
+                  onClick={() => applyViewDefaults("green")}
+                  className="rounded-sm px-3 py-1.5 text-sm font-medium transition-colors"
+                  style={{
+                    backgroundColor: view === "green" ? "var(--eco-primary)" : "transparent",
+                    color: view === "green" ? "var(--primary-foreground)" : "var(--eco-muted)",
+                  }}
+                >
+                  Green options
+                </button>
+                <button
+                  onClick={() => applyViewDefaults("conventional")}
+                  className="rounded-sm px-3 py-1.5 text-sm font-medium transition-colors"
+                  style={{
+                    backgroundColor: view === "conventional" ? "#1f3b73" : "transparent",
+                    color: view === "conventional" ? "#ffffff" : "var(--eco-muted)",
+                  }}
+                >
+                  Conventional view
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+      </section>
     </main>
   );
 }
@@ -200,8 +239,8 @@ function Index() {
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="rounded-2xl p-4"
-      style={{ backgroundColor: "var(--eco-surface)" }}
+      className="rounded-md border p-4"
+      style={{ backgroundColor: "var(--eco-surface)", borderColor: "var(--border)" }}
     >
       {children}
     </div>
@@ -213,23 +252,24 @@ function StatTile({
   value,
   unit,
   icon,
+  accentColor,
 }: {
   label: string;
   value: string;
   unit: string;
   icon: React.ReactNode;
-  accent?: "primary" | "warning";
+  accentColor: string;
 }) {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl p-5"
-      style={{ backgroundColor: "var(--eco-surface)" }}
+      className="relative overflow-hidden rounded-md border p-5"
+      style={{ backgroundColor: "var(--eco-surface)", borderColor: "var(--border)" }}
     >
       <div className="flex items-center justify-between">
         <div className="text-sm" style={{ color: "var(--eco-muted)" }}>
           {label}
         </div>
-        <div style={{ color: "var(--eco-primary)" }}>{icon}</div>
+        <div style={{ color: accentColor }}>{icon}</div>
       </div>
       <div className="mt-2 flex items-baseline gap-1">
         <div
@@ -242,10 +282,6 @@ function StatTile({
           {unit}
         </div>
       </div>
-      <Sparkles
-        size={80}
-        className="pointer-events-none absolute -right-4 -bottom-4 opacity-[0.06]"
-      />
     </div>
   );
 }
@@ -257,6 +293,7 @@ function ToggleCard({
   active,
   activeLabel = "On",
   inactiveLabel = "Off",
+  accentColor,
   onToggle,
 }: {
   icon: React.ReactNode;
@@ -265,38 +302,41 @@ function ToggleCard({
   active: boolean;
   activeLabel?: string;
   inactiveLabel?: string;
+  accentColor: string;
   onToggle: () => void;
 }) {
   return (
     <button
       onClick={onToggle}
-      className="group flex flex-col gap-3 rounded-2xl p-4 text-left transition-all active:scale-[0.98]"
+      className="group flex flex-col gap-3 rounded-md border p-4 text-left transition-all active:scale-[0.98]"
       style={{
         backgroundColor: active
-          ? "color-mix(in oklab, var(--eco-primary) 18%, var(--eco-surface))"
+          ? `color-mix(in oklab, ${accentColor} 10%, white)`
           : "var(--eco-surface)",
-        outline: active ? "1px solid var(--eco-primary)" : "1px solid transparent",
+        borderColor: active
+          ? `color-mix(in oklab, ${accentColor} 55%, white)`
+          : "var(--border)",
       }}
     >
       <div className="flex items-center justify-between">
         <div
-          className="flex h-11 w-11 items-center justify-center rounded-xl"
+          className="flex h-11 w-11 items-center justify-center rounded-sm"
           style={{
             backgroundColor: active
-              ? "var(--eco-primary)"
-              : "color-mix(in oklab, var(--eco-text) 10%, transparent)",
+              ? accentColor
+              : `color-mix(in oklab, ${accentColor} 10%, white)`,
             color: active ? "var(--primary-foreground)" : "var(--eco-muted)",
           }}
         >
           {icon}
         </div>
         <span
-          className="rounded-full px-2.5 py-1 text-xs font-medium"
+          className="rounded-sm px-2.5 py-1 text-xs font-medium"
           style={{
             backgroundColor: active
-              ? "color-mix(in oklab, var(--eco-primary) 30%, transparent)"
-              : "color-mix(in oklab, var(--eco-text) 10%, transparent)",
-            color: active ? "var(--eco-primary)" : "var(--eco-muted)",
+              ? `color-mix(in oklab, ${accentColor} 30%, transparent)`
+              : `color-mix(in oklab, ${accentColor} 8%, white)`,
+            color: active ? accentColor : "var(--eco-muted)",
           }}
         >
           {active ? activeLabel : inactiveLabel}
@@ -316,10 +356,12 @@ function ThermoCard({
   value,
   onChange,
   cfg,
+  accentColor,
 }: {
   value: number;
   onChange: (n: number) => void;
   cfg: ReturnType<typeof useConfig>[0];
+  accentColor: string;
 }) {
   const { thermostatMin: min, thermostatMax: max, thermostatBaseline: base, thermostatCoefPerDegree: coef } = cfg.savings;
   const diff = base - value;
@@ -331,15 +373,15 @@ function ThermoCard({
         : "Baseline";
   return (
     <div
-      className="flex flex-col gap-3 rounded-2xl p-4"
-      style={{ backgroundColor: "var(--eco-surface)" }}
+      className="flex flex-col gap-3 rounded-md border p-4"
+      style={{ backgroundColor: "var(--eco-surface)", borderColor: "var(--border)" }}
     >
       <div className="flex items-center justify-between">
         <div
-          className="flex h-11 w-11 items-center justify-center rounded-xl"
+          className="flex h-11 w-11 items-center justify-center rounded-sm"
           style={{
-            backgroundColor: "color-mix(in oklab, var(--eco-primary) 20%, transparent)",
-            color: "var(--eco-primary)",
+            backgroundColor: `color-mix(in oklab, ${accentColor} 10%, white)`,
+            color: accentColor,
           }}
         >
           <Thermometer size={22} />
@@ -353,7 +395,8 @@ function ThermoCard({
         step={1}
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        className="w-full accent-[var(--eco-primary)]"
+        className="w-full"
+        style={{ accentColor }}
       />
       <div className="flex justify-between text-xs" style={{ color: "var(--eco-muted)" }}>
         <span>Thermostat</span>
