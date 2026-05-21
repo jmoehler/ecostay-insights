@@ -1,6 +1,7 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap");
 @import "tailwindcss" source(none);
-@source "../src";
 @import "tw-animate-css";
+@source "../src";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -72,6 +73,9 @@
   --eco-muted: #6d7f72;
   --eco-primary: #2f8f57;
   --eco-warning: #d90606;
+  --eco-blue: #2f6f9f;
+  --eco-ink: #12202f;
+  --eco-shell: #eaf0f6;
 
   --background: var(--eco-bg);
   --foreground: var(--eco-text);
@@ -150,5 +154,55 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: "Manrope", "Segoe UI", sans-serif;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(
+        circle at 8% -10%,
+        color-mix(in oklab, var(--eco-primary) 18%, white) 0%,
+        transparent 40%
+      ),
+      radial-gradient(
+        circle at 92% 0%,
+        color-mix(in oklab, var(--eco-blue) 18%, white) 0%,
+        transparent 42%
+      ),
+      linear-gradient(
+        160deg,
+        var(--eco-bg) 0%,
+        color-mix(in oklab, var(--eco-bg) 82%, #e5ecf3) 100%
+      );
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: "Sora", "Manrope", sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  .eco-shell {
+    background: linear-gradient(
+      175deg,
+      color-mix(in oklab, var(--eco-surface) 92%, white) 0%,
+      color-mix(in oklab, var(--eco-shell) 70%, white) 100%
+    );
+    border: 1px solid color-mix(in oklab, var(--eco-blue) 14%, transparent);
+    border-radius: 2rem;
+    box-shadow:
+      0 26px 44px -36px rgba(17, 37, 56, 0.48),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+
+  .eco-nav-pill {
+    border-radius: 999px;
+    padding: 0.52rem 1rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    transition: all 180ms ease;
   }
 }

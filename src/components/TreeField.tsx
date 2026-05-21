@@ -1,4 +1,5 @@
 import { AppConfig } from "@/config/appConfig";
+import { useEffect, useRef, useState } from "react";
 
 type Props = { score: number; cfg: AppConfig };
 
@@ -87,19 +88,43 @@ export function TreeField({ score, cfg }: Props) {
   const partial = Math.min(1, Math.max(0, totalTreeProgress - fullTrees));
   const overflow = totalTreeProgress > maxTrees;
 
-  const width = 900;
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(900);
   const height = 220;
   const groundY = height - 24;
+  const baseSceneWidth = 900;
+  const sceneScale = Math.min(1, width / baseSceneWidth);
+  const sceneOffsetX = (width - baseSceneWidth * sceneScale) / 2;
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+
+    const updateWidth = (next: number) => {
+      setWidth(Math.max(320, Math.round(next)));
+    };
+
+    updateWidth(el.clientWidth);
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      updateWidth(entry.contentRect.width);
+    });
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
 
   // place up to maxTrees + 1 (the growing one)
   const slots = Math.min(maxTrees, fullTrees + (partial > 0 && fullTrees < maxTrees ? 1 : 0));
   const positions = Array.from({ length: Math.max(1, slots) }, (_, i) => {
-    const spacing = (width - 80) / Math.max(1, maxTrees - 1);
+    const spacing = (baseSceneWidth - 80) / Math.max(1, maxTrees - 1);
     return 40 + i * spacing;
   });
 
   return (
     <div
+      ref={containerRef}
       className="relative w-full overflow-hidden rounded-md border"
       style={{
         backgroundColor: "var(--background)",
@@ -128,16 +153,18 @@ export function TreeField({ score, cfg }: Props) {
           strokeWidth={1}
         />
 
-        <g transform={`translate(0, ${groundY})`}>
-          {overflow ? (
-            <Forest />
-          ) : (
-            positions.map((x, i) => {
-              const stage = i < fullTrees ? 1 : partial;
-              const palette = TREE_PALETTES[i % TREE_PALETTES.length];
-              return <Tree key={i} stage={stage} x={x} palette={palette} />;
-            })
-          )}
+        <g transform={`translate(${sceneOffsetX}, ${groundY})`}>
+          <g transform={`scale(${sceneScale})`}>
+            {overflow ? (
+              <Forest />
+            ) : (
+              positions.map((x, i) => {
+                const stage = i < fullTrees ? 1 : partial;
+                const palette = TREE_PALETTES[i % TREE_PALETTES.length];
+                return <Tree key={i} stage={stage} x={x} palette={palette} />;
+              })
+            )}
+          </g>
         </g>
       </svg>
     </div>
