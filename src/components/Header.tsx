@@ -39,7 +39,7 @@ export function Header() {
     >
       <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
         <Leaf size={20} style={{ color: headerAccent }} />
-        <span>Verdant Stay</span>
+        <span>Green Proof</span>
       </Link>
 
       <div className="flex items-center gap-3">

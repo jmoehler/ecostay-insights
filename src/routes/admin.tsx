@@ -8,7 +8,7 @@ import { resetAllData, resetLiveCustomer } from "@/lib/ecoStore";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Admin — Verdant Stay" },
+      { title: "Admin — Green Proof" },
       { name: "description", content: "Tune savings constants, theme, and simulation." },
     ],
   }),

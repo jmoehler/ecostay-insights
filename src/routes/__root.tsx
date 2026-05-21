@@ -74,18 +74,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Verdant Stay — Hotel Environmental Impact" },
+      { title: "Green Proof — Hotel Environmental Impact" },
       {
         name: "description",
         content: "Live prototype showing a hotel's environmental impact across guests and management.",
       },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Verdant Stay" },
+      { property: "og:title", content: "Green Proof" },
       { property: "og:description", content: "Hotel environmental impact prototype." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-    ],
+      { name: "twitter:title", content: "Green Proof" },],
     links: [
       {
         rel: "stylesheet",

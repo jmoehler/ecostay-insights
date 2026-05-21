@@ -19,7 +19,7 @@ import { computeDailySavings, computeScore } from "@/lib/ecoStore";
 export const Route = createFileRoute("/manager")({
   head: () => ({
     meta: [
-      { title: "Manager Dashboard — Verdant Stay" },
+      { title: "Manager Dashboard — Green Proof" },
       { name: "description", content: "Aggregated environmental impact across all guest stays." },
     ],
   }),
