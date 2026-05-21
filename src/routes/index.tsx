@@ -58,7 +58,7 @@ function Index() {
   const displayWater = Math.max(0, totalWater);
   const score = computeScore(displayCo2, displayWater, cfg);
 
-  const toggle = (key: "skipCleaning" | "skipTowels" | "acOn") =>
+  const toggle = (key: "skipCleaning" | "skipTowels" | "skipLinen" | "acOn") =>
     setLive({
       ...live,
       decisions: { ...live.decisions, [key]: !live.decisions[key] },
@@ -75,6 +75,7 @@ function Index() {
     return {
       cleaning: `If skipped: +${s.cleaningSkipWater} L and +${s.cleaningSkipCo2} kg CO2/day`,
       towels: `If skipped: +${s.towelSkipWater} L and +${s.towelSkipCo2} kg CO2/day`,
+      linen: `If skipped: +${s.linenSkipWater} L and +${s.linenSkipCo2} kg CO2/day`,
       acOff: `+${s.acOffCo2} kg CO2/day`,
     };
   }, [cfg]);
@@ -169,14 +170,14 @@ function Index() {
                       borderColor: `color-mix(in oklab, ${accentColor} 30%, white)`,
                     }}
                   >
-                    +{cfg.savings.trainBonusCo2} kg CO2
+                    -{cfg.savings.trainBonusCo2} kg CO2
                   </div>
                 </div>
               </Card>
             </>
           ) : null}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <ToggleCard
               icon={<BedDouble size={22} />}
               title="Request room cleaning"
@@ -197,6 +198,19 @@ function Index() {
               accentColor={accentColor}
               onToggle={() => toggle("skipTowels")}
             />
+            <ToggleCard
+              icon={<Shirt size={22} />}
+              title="Request linen change"
+              tooltip={impact.linen}
+              active={!live.decisions.skipLinen}
+              activeLabel="Requested"
+              inactiveLabel="Skipped"
+              accentColor={accentColor}
+              onToggle={() => toggle("skipLinen")}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <ThermoCard
               value={live.decisions.thermostat}
               onChange={setTemp}

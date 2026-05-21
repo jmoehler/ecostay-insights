@@ -7,6 +7,8 @@ export type AppConfig = {
     cleaningSkipCo2: number; // kg per day
     towelSkipWater: number;
     towelSkipCo2: number;
+    linenSkipWater: number;
+    linenSkipCo2: number;
     thermostatCoefPerDegree: number; // kg CO2 saved per °C below baseline
     thermostatBaseline: number; // °C
     thermostatMin: number;
@@ -53,6 +55,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     cleaningSkipCo2: 1,
     towelSkipWater: 20,
     towelSkipCo2: 0.5,
+    linenSkipWater: 30,
+    linenSkipCo2: 0.5,
     thermostatCoefPerDegree: 1,
     thermostatBaseline: 20,
     thermostatMin: 16,

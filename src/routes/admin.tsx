@@ -66,6 +66,12 @@ function AdminPage() {
         <Field label="CO₂ saved per towel skip (kg/day)">
           <NumberInput value={draft.savings.towelSkipCo2} onChange={(v) => setSav("towelSkipCo2", v)} />
         </Field>
+        <Field label="Water saved per linen skip (L/day)">
+          <NumberInput value={draft.savings.linenSkipWater} onChange={(v) => setSav("linenSkipWater", v)} />
+        </Field>
+        <Field label="CO₂ saved per linen skip (kg/day)">
+          <NumberInput value={draft.savings.linenSkipCo2} onChange={(v) => setSav("linenSkipCo2", v)} />
+        </Field>
         <Field label="Thermostat coefficient (kg CO₂ per °C diff)">
           <NumberInput value={draft.savings.thermostatCoefPerDegree} onChange={(v) => setSav("thermostatCoefPerDegree", v)} />
         </Field>

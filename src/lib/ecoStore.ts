@@ -4,6 +4,7 @@ import { AppConfig, evalScoreFormula } from "@/config/appConfig";
 export type Decisions = {
   skipCleaning: boolean; // true = save
   skipTowels: boolean; // true = save
+  skipLinen: boolean; // true = save
   thermostat: number; // °C
   acOn: boolean;
   arrivedByTrain: boolean;
@@ -16,6 +17,7 @@ export type DailySavings = {
   decisions: {
     cleaningSkipped: boolean;
     towelsSkipped: boolean;
+    linenSkipped: boolean;
     thermostat: number;
     acOff: boolean;
     train: boolean; // only true on day 0 of stay
@@ -53,6 +55,10 @@ export function computeDailySavings(
   if (d.skipTowels) {
     co2 += s.towelSkipCo2;
     water += s.towelSkipWater;
+  }
+  if (d.skipLinen) {
+    co2 += s.linenSkipCo2;
+    water += s.linenSkipWater;
   }
   // Thermostat: each °C below baseline saves; above subtracts.
   const minClamp = Math.max(s.thermostatMin, 15);
@@ -102,6 +108,7 @@ export function getSkipDefaultsForView(view: CustomerViewMode) {
   return {
     skipCleaning: shouldSkipByDefault,
     skipTowels: shouldSkipByDefault,
+    skipLinen: shouldSkipByDefault,
   };
 }
 
@@ -234,6 +241,7 @@ function decisionsForProfile(
     return {
       skipCleaning: rng() < 0.8,
       skipTowels: rng() < 0.82,
+      skipLinen: rng() < 0.74,
       thermostat: Math.round(rand(rng, base - 2.5, base - 0.5)),
       acOn: rng() < 0.15,
       arrivedByTrain: rng() < 0.62,
@@ -243,6 +251,7 @@ function decisionsForProfile(
     return {
       skipCleaning: rng() < 0.08,
       skipTowels: rng() < 0.18,
+      skipLinen: rng() < 0.14,
       thermostat: Math.round(rand(rng, base + 1, base + 4)),
       acOn: rng() < 0.82,
       arrivedByTrain: rng() < 0.1,
@@ -251,6 +260,7 @@ function decisionsForProfile(
   return {
     skipCleaning: rng() < 0.42,
     skipTowels: rng() < 0.55,
+    skipLinen: rng() < 0.46,
     thermostat: Math.round(rand(rng, base - 1, base + 2)),
     acOn: rng() < 0.45,
     arrivedByTrain: rng() < 0.28,
@@ -328,6 +338,7 @@ export function generateBackgroundStays(cfg: AppConfig, simDay: number): Stay[] 
           decisions: {
             cleaningSkipped: d.skipCleaning,
             towelsSkipped: d.skipTowels,
+            linenSkipped: d.skipLinen,
             thermostat: d.thermostat,
             acOff: !d.acOn,
             train: day === room.stay.startDay && room.train,

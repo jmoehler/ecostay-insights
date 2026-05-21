@@ -132,6 +132,7 @@ export function useLiveCommitter(cfg: AppConfig) {
           decisions: {
             cleaningSkipped: updated.decisions.skipCleaning,
             towelsSkipped: updated.decisions.skipTowels,
+            linenSkipped: updated.decisions.skipLinen,
             thermostat: updated.decisions.thermostat,
             acOff: !updated.decisions.acOn,
             train: trainBonus > 0,

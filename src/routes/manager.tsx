@@ -56,6 +56,7 @@ function ManagerPage() {
         decisions: {
           cleaningSkipped: live.decisions.skipCleaning,
           towelsSkipped: live.decisions.skipTowels,
+          linenSkipped: live.decisions.skipLinen,
           thermostat: live.decisions.thermostat,
           acOff: !live.decisions.acOn,
           train: !live.trainAdded && live.decisions.arrivedByTrain,
@@ -130,6 +131,7 @@ function ManagerPage() {
     const s = cfg.savings;
     let cleaning = 0;
     let towels = 0;
+    let linen = 0;
     let thermostat = 0;
     let ac = 0;
     let train = 0;
@@ -137,6 +139,7 @@ function ManagerPage() {
     for (const day of allDays) {
       if (day.decisions.cleaningSkipped) cleaning += s.cleaningSkipCo2 + s.cleaningSkipWater;
       if (day.decisions.towelsSkipped) towels += s.towelSkipCo2 + s.towelSkipWater;
+      if (day.decisions.linenSkipped) linen += s.linenSkipCo2 + s.linenSkipWater;
       const diff = s.thermostatBaseline - day.decisions.thermostat;
       thermostat += diff * s.thermostatCoefPerDegree;
       if (day.decisions.acOff) ac += s.acOffCo2;
@@ -146,18 +149,23 @@ function ManagerPage() {
     const abs = {
       Cleaning: Math.max(0, cleaning),
       Towels: Math.max(0, towels),
+      Linen: Math.max(0, linen),
       Thermostat: Math.max(0, thermostat),
       AC: Math.max(0, ac),
       Train: Math.max(0, train),
     };
 
-    const total = Math.max(1, abs.Cleaning + abs.Towels + abs.Thermostat + abs.AC + abs.Train);
+    const total = Math.max(
+      1,
+      abs.Cleaning + abs.Towels + abs.Linen + abs.Thermostat + abs.AC + abs.Train,
+    );
 
     return [
       {
         name: "Contribution share",
         Cleaning: (abs.Cleaning / total) * 100,
         Towels: (abs.Towels / total) * 100,
+        Linen: (abs.Linen / total) * 100,
         Thermostat: (abs.Thermostat / total) * 100,
         AC: (abs.AC / total) * 100,
         Train: (abs.Train / total) * 100,
@@ -183,6 +191,11 @@ function ManagerPage() {
       Math.max(1, allStays.length)) *
     100;
 
+  const pctLinen =
+    (allStays.filter((stay) => stay.days.some((day) => day.decisions.linenSkipped)).length /
+      Math.max(1, allStays.length)) *
+    100;
+
   const pctTrain =
     (allStays.filter((stay) => stay.days.some((day) => day.decisions.train)).length /
       Math.max(1, allStays.length)) *
@@ -201,6 +214,7 @@ function ManagerPage() {
       water: "color-mix(in oklab, var(--eco-blue) 78%, white)",
       cleaning: `color-mix(in oklab, ${primary} 72%, white)`,
       towels: `color-mix(in oklab, var(--eco-blue) 62%, ${primary})`,
+      linen: `color-mix(in oklab, var(--eco-blue) 48%, ${primary})`,
       thermostat: `color-mix(in oklab, ${warning} 58%, white)`,
       ac: "color-mix(in oklab, var(--eco-blue) 42%, white)",
       train: `color-mix(in oklab, ${primary} 56%, #d8ec93)`,
@@ -321,6 +335,7 @@ function ManagerPage() {
                 <Legend wrapperStyle={{ color: "var(--eco-muted)", fontSize: 12 }} />
                 <Bar dataKey="Cleaning" stackId="a" fill={chartPalette.cleaning} />
                 <Bar dataKey="Towels" stackId="a" fill={chartPalette.towels} />
+                <Bar dataKey="Linen" stackId="a" fill={chartPalette.linen} />
                 <Bar dataKey="Thermostat" stackId="a" fill={chartPalette.thermostat} />
                 <Bar dataKey="AC" stackId="a" fill={chartPalette.ac} />
                 <Bar dataKey="Train" stackId="a" fill={chartPalette.train} />
@@ -340,6 +355,11 @@ function ManagerPage() {
               icon={<Shirt size={18} />}
               label="Skipped towels"
               value={`${pctTowels.toFixed(0)}%`}
+            />
+            <Behavior
+              icon={<Droplet size={18} />}
+              label="Skipped linen"
+              value={`${pctLinen.toFixed(0)}%`}
             />
             <Behavior
               icon={<Train size={18} />}
