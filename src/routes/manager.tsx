@@ -113,14 +113,25 @@ function ManagerPage() {
       if (d.decisions.acOff) ac += s.acOffCo2;
       if (d.decisions.train) train += s.trainBonusCo2;
     }
+    const abs = {
+      Cleaning: Math.max(0, cleaning),
+      Towels: Math.max(0, towels),
+      Thermostat: Math.max(0, thermostat),
+      AC: Math.max(0, ac),
+      Train: Math.max(0, train),
+    };
+    const total = Math.max(
+      1,
+      abs.Cleaning + abs.Towels + abs.Thermostat + abs.AC + abs.Train,
+    );
     return [
       {
-        name: "Decision impact (combined units)",
-        Cleaning: Math.max(0, Math.round(cleaning)),
-        Towels: Math.max(0, Math.round(towels)),
-        Thermostat: Math.max(0, Math.round(thermostat)),
-        AC: Math.max(0, Math.round(ac)),
-        Train: Math.max(0, Math.round(train)),
+        name: "Contribution share",
+        Cleaning: (abs.Cleaning / total) * 100,
+        Towels: (abs.Towels / total) * 100,
+        Thermostat: (abs.Thermostat / total) * 100,
+        AC: (abs.AC / total) * 100,
+        Train: (abs.Train / total) * 100,
       },
     ];
   }, [allDays, cfg]);
@@ -171,7 +182,6 @@ function ManagerPage() {
           label={`Active stays (${activeBackground} bg / ${activeLive} live)`}
           value={activeStays.toString()}
         />
-        <Kpi icon={<Sparkles size={18} />} label="Avg score / stay" value={avgScore.toFixed(1)} />
       </div>
 
       <Panel
@@ -221,9 +231,17 @@ function ManagerPage() {
             <ResponsiveContainer>
               <BarChart data={contributions} layout="vertical">
                 <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-                <XAxis type="number" {...chartCommon} />
+                <XAxis
+                  type="number"
+                  domain={[0, 100]}
+                  tickFormatter={(v) => `${Math.round(v)}%`}
+                  {...chartCommon}
+                />
                 <YAxis type="category" dataKey="name" hide />
                 <Tooltip
+                  shared={false}
+                  cursor={{ fill: "rgba(47, 143, 87, 0.08)" }}
+                  content={<ContributionTooltip />}
                   contentStyle={{
                     backgroundColor: "var(--eco-surface)",
                     border: "1px solid var(--border)",
@@ -231,11 +249,11 @@ function ManagerPage() {
                   }}
                 />
                 <Legend wrapperStyle={{ color: "var(--eco-muted)", fontSize: 12 }} />
-                <Bar dataKey="Cleaning" stackId="a" fill="#4ADE80" />
-                <Bar dataKey="Towels" stackId="a" fill="#22D3EE" />
-                <Bar dataKey="Thermostat" stackId="a" fill="#F59E0B" />
-                <Bar dataKey="AC" stackId="a" fill="#A78BFA" />
-                <Bar dataKey="Train" stackId="a" fill="#F472B6" />
+                <Bar dataKey="Cleaning" stackId="a" fill="var(--eco-primary)" />
+                <Bar dataKey="Towels" stackId="a" fill="#2BAA8D" />
+                <Bar dataKey="Thermostat" stackId="a" fill="var(--eco-warning)" />
+                <Bar dataKey="AC" stackId="a" fill="#5C8897" />
+                <Bar dataKey="Train" stackId="a" fill="#7DAA52" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -290,6 +308,31 @@ function Behavior({ icon, label, value }: { icon: React.ReactNode; label: string
         {label}
       </div>
       <div className="mt-2 text-2xl font-semibold tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+function ContributionTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ name?: string; value?: number; color?: string }>;
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+  const p = payload[0];
+  if (!p || typeof p.value !== "number") return null;
+  return (
+    <div
+      className="rounded-md border px-3 py-2 text-sm"
+      style={{
+        backgroundColor: "var(--eco-surface)",
+        borderColor: "var(--border)",
+        color: "var(--eco-text)",
+      }}
+    >
+      <div className="font-medium">{p.name}</div>
+      <div style={{ color: p.color ?? "var(--eco-primary)" }}>{p.value.toFixed(1)}%</div>
     </div>
   );
 }

@@ -38,14 +38,19 @@ function Index() {
   useEffect(() => {
     setView(getCustomerView());
   }, []);
-  const { progress } = useSimTime(cfg);
+  const { day: simDay, progress } = useSimTime(cfg);
   const isGreenView = view === "green";
   const accentColor = isGreenView ? "var(--eco-primary)" : "#1f3b73";
 
+  const liveDayProgress =
+    simDay === live.stayStartDay
+      ? Math.max(0, progress - live.stayStartProgress)
+      : progress;
+
   const todayProjected = computeDailySavings(live.decisions, cfg);
   const todayLive = {
-    co2: todayProjected.co2 * progress,
-    water: todayProjected.water * progress,
+    co2: todayProjected.co2 * liveDayProgress,
+    water: todayProjected.water * liveDayProgress,
   };
   const totalCo2 =
     live.history.reduce((s, d) => s + d.co2, 0) + todayLive.co2;

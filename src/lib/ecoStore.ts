@@ -32,6 +32,7 @@ export type Stay = {
 
 export type LiveCustomer = {
   stayStartDay: number;
+  stayStartProgress: number; // 0..1 progress within stayStartDay when guest checked in
   decisions: Decisions;
   history: DailySavings[]; // committed days
   trainAdded: boolean;
@@ -121,6 +122,7 @@ export function loadLive(cfg: AppConfig): LiveCustomer {
   if (typeof window === "undefined") {
     return {
       stayStartDay: 0,
+      stayStartProgress: 0,
       decisions: defaultDecisions(cfg),
       history: [],
       trainAdded: false,
@@ -132,6 +134,10 @@ export function loadLive(cfg: AppConfig): LiveCustomer {
       const p = JSON.parse(raw);
       return {
         stayStartDay: p.stayStartDay ?? getSimDay(cfg),
+        stayStartProgress:
+          typeof p.stayStartProgress === "number"
+            ? Math.max(0, Math.min(1, p.stayStartProgress))
+            : 0,
         decisions: { ...defaultDecisions(cfg, getCustomerView()), ...(p.decisions ?? {}) },
         history: Array.isArray(p.history) ? p.history : [],
         trainAdded: !!p.trainAdded,
@@ -140,6 +146,7 @@ export function loadLive(cfg: AppConfig): LiveCustomer {
   } catch {}
   const fresh: LiveCustomer = {
     stayStartDay: getSimDay(cfg),
+    stayStartProgress: getSimDayProgress(cfg),
     decisions: defaultDecisions(cfg, getCustomerView()),
     history: [],
     trainAdded: false,
@@ -157,6 +164,7 @@ export function saveLive(l: LiveCustomer) {
 export function resetLiveCustomer(cfg: AppConfig) {
   const fresh: LiveCustomer = {
     stayStartDay: getSimDay(cfg),
+    stayStartProgress: getSimDayProgress(cfg),
     decisions: defaultDecisions(cfg, getCustomerView()),
     history: [],
     trainAdded: false,

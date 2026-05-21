@@ -1,7 +1,7 @@
 import { Link, useRouter, useLocation } from "@tanstack/react-router";
 import { Settings, User, BarChart3, Leaf } from "lucide-react";
 import { useConfig, useSimTime } from "@/lib/ecoHooks";
-import { setRole, getRole, getCustomerView, CustomerViewMode } from "@/lib/ecoStore";
+import { setRole, getCustomerView, CustomerViewMode } from "@/lib/ecoStore";
 import { useEffect, useState } from "react";
 
 export function Header() {
@@ -9,17 +9,12 @@ export function Header() {
   const { day, clock } = useSimTime(cfg);
   const router = useRouter();
   const location = useLocation();
-  const [role, setLocalRole] = useState<"customer" | "manager">("customer");
   const [customerView, setCustomerView] = useState<CustomerViewMode>("green");
+  const isCustomerPage = location.pathname === "/";
+  const isManagerPage = location.pathname === "/manager";
+  const isAdminPage = location.pathname === "/admin";
   const isConventionalCustomer = location.pathname === "/" && customerView === "conventional";
   const headerAccent = isConventionalCustomer ? "#1f3b73" : "var(--eco-primary)";
-
-  useEffect(() => {
-    setLocalRole(getRole());
-    const onChange = () => setLocalRole(getRole());
-    window.addEventListener("eco-role-change", onChange);
-    return () => window.removeEventListener("eco-role-change", onChange);
-  }, []);
 
   useEffect(() => {
     setCustomerView(getCustomerView());
@@ -28,11 +23,10 @@ export function Header() {
     return () => window.removeEventListener("eco-customer-view-change", onChange);
   }, []);
 
-  const switchRole = (r: "customer" | "manager") => {
-    setRole(r);
-    setLocalRole(r);
-    if (r === "customer" && location.pathname !== "/") router.navigate({ to: "/" });
-    if (r === "manager" && location.pathname !== "/manager") router.navigate({ to: "/manager" });
+  const goToPage = (to: "/" | "/manager" | "/admin") => {
+    if (to === "/") setRole("customer");
+    if (to === "/manager") setRole("manager");
+    if (location.pathname !== to) router.navigate({ to });
   };
 
   return (
@@ -49,30 +43,40 @@ export function Header() {
       </Link>
 
       <div className="flex items-center gap-3">
-        {/* Role segmented control */}
+        {/* Main nav segmented control */}
         <div
           className="flex items-center rounded-sm border p-1 text-sm"
           style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}
         >
           <button
-            onClick={() => switchRole("customer")}
+            onClick={() => goToPage("/")}
             className="flex items-center gap-1.5 rounded-sm px-3 py-1.5 transition-colors"
             style={{
-              backgroundColor: role === "customer" ? headerAccent : "transparent",
-              color: role === "customer" ? "var(--primary-foreground)" : "var(--eco-muted)",
+              backgroundColor: isCustomerPage ? headerAccent : "transparent",
+              color: isCustomerPage ? "var(--primary-foreground)" : "var(--eco-muted)",
             }}
           >
             <User size={14} /> Customer
           </button>
           <button
-            onClick={() => switchRole("manager")}
+            onClick={() => goToPage("/manager")}
             className="flex items-center gap-1.5 rounded-sm px-3 py-1.5 transition-colors"
             style={{
-              backgroundColor: role === "manager" ? headerAccent : "transparent",
-              color: role === "manager" ? "var(--primary-foreground)" : "var(--eco-muted)",
+              backgroundColor: isManagerPage ? headerAccent : "transparent",
+              color: isManagerPage ? "var(--primary-foreground)" : "var(--eco-muted)",
             }}
           >
             <BarChart3 size={14} /> Manager
+          </button>
+          <button
+            onClick={() => goToPage("/admin")}
+            className="flex items-center gap-1.5 rounded-sm px-3 py-1.5 transition-colors"
+            style={{
+              backgroundColor: isAdminPage ? headerAccent : "transparent",
+              color: isAdminPage ? "var(--primary-foreground)" : "var(--eco-muted)",
+            }}
+          >
+            <Settings size={14} /> Admin
           </button>
         </div>
 
@@ -84,13 +88,6 @@ export function Header() {
           Sim day {day} · {clock} left
         </div>
 
-        <Link
-          to="/admin"
-          className="flex items-center gap-1.5 rounded-sm border px-3 py-1.5 text-sm transition-colors"
-          style={{ backgroundColor: "var(--background)", color: "var(--eco-text)", borderColor: "var(--border)" }}
-        >
-          <Settings size={14} /> Admin
-        </Link>
       </div>
     </header>
   );

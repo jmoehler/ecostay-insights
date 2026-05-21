@@ -71,6 +71,29 @@ function isLegacyDefaultTheme(theme: AppConfig["theme"]) {
   );
 }
 
+function isTemporaryTrainBonusSavings(savings: AppConfig["savings"]) {
+  return (
+    savings.cleaningSkipWater === 12 &&
+    savings.cleaningSkipCo2 === 1 &&
+    savings.towelSkipWater === 20 &&
+    savings.towelSkipCo2 === 0.5 &&
+    savings.thermostatCoefPerDegree === 1 &&
+    savings.thermostatBaseline === 20 &&
+    savings.thermostatMin === 16 &&
+    savings.thermostatMax === 28 &&
+    savings.acOffCo2 === 3 &&
+    savings.trainBonusCo2 === 20
+  );
+}
+
+function isLegacyDefaultTrees(trees: AppConfig["trees"]) {
+  return (
+    trees.scorePerTree === 100 &&
+    trees.maxTrees === 10 &&
+    trees.startingTree === 1
+  );
+}
+
 export const DEFAULT_CONFIG: AppConfig = {
   savings: {
     cleaningSkipWater: 12,
@@ -92,7 +115,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   trees: {
     scorePerTree: 100,
     maxTrees: 10,
-    startingTree: 1,
+    startingTree: 0,
   },
   time: {
     secondsPerSimDay: 120,
@@ -139,6 +162,12 @@ export function loadConfig(): AppConfig {
     // Migrate persisted users that are still exactly on the old built-in dark defaults.
     if (parsed.theme && isLegacyDefaultTheme(merged.theme)) {
       merged.theme = DEFAULT_CONFIG.theme;
+    }
+    if (parsed.savings && isTemporaryTrainBonusSavings(merged.savings)) {
+      merged.savings.trainBonusCo2 = DEFAULT_CONFIG.savings.trainBonusCo2;
+    }
+    if (parsed.trees && isLegacyDefaultTrees(merged.trees)) {
+      merged.trees.startingTree = DEFAULT_CONFIG.trees.startingTree;
     }
     return merged;
   } catch {
