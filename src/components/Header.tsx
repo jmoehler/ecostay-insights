@@ -10,7 +10,6 @@ export function Header() {
   const router = useRouter();
   const location = useLocation();
   const [guestView, setGuestView] = useState<GuestViewMode>("green");
-  if (location.pathname === "/") return null;
   const isGuestPage = location.pathname === "/guest";
   const isManagerPage = location.pathname === "/manager";
   const isAdminPage = location.pathname === "/admin";
@@ -27,6 +26,8 @@ export function Header() {
     window.addEventListener("eco-guest-view-change", onChange);
     return () => window.removeEventListener("eco-guest-view-change", onChange);
   }, []);
+
+  if (location.pathname === "/") return null;
 
   const goToPage = (to: "/guest" | "/manager" | "/admin") => {
     if (to === "/guest") setRole("guest");
