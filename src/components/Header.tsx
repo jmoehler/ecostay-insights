@@ -36,17 +36,17 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 px-4 pb-2 pt-4 sm:px-6">
       <div
-        className="eco-shell flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5"
+        className="eco-shell flex items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-5"
         style={{
           background: shellBackground,
           borderColor: `color-mix(in oklab, ${shellTone} 14%, transparent)`,
         }}
       >
-        <Link to="/" className="flex items-center">
+        <Link to="/" className="shrink-0 flex items-center">
           <img
             src="/green_proof_logo_transparent.svg"
             alt="Green Proof"
-            className="h-12 w-auto sm:h-14"
+            className="h-8 w-auto sm:h-10 lg:h-11"
           />
         </Link>
 
@@ -56,7 +56,7 @@ export function Header() {
         >
           <button
             onClick={() => goToPage("/")}
-            className="eco-nav-pill flex items-center gap-1.5"
+            className="eco-nav-pill flex items-center gap-1 px-2.5 py-1.5 text-[0.7rem] sm:gap-1.5 sm:px-4 sm:py-2 sm:text-[0.82rem]"
             style={{
               backgroundColor: isGuestPage ? "var(--eco-ink)" : "transparent",
               color: isGuestPage ? "#f7fafc" : "var(--eco-muted)",
@@ -66,7 +66,7 @@ export function Header() {
           </button>
           <button
             onClick={() => goToPage("/manager")}
-            className="eco-nav-pill flex items-center gap-1.5"
+            className="eco-nav-pill flex items-center gap-1 px-2.5 py-1.5 text-[0.7rem] sm:gap-1.5 sm:px-4 sm:py-2 sm:text-[0.82rem]"
             style={{
               backgroundColor: isManagerPage ? "var(--eco-ink)" : "transparent",
               color: isManagerPage ? "#f7fafc" : "var(--eco-muted)",
@@ -76,7 +76,7 @@ export function Header() {
           </button>
           <button
             onClick={() => goToPage("/admin")}
-            className="eco-nav-pill flex items-center gap-1.5"
+            className="eco-nav-pill flex items-center gap-1 px-2.5 py-1.5 text-[0.7rem] sm:gap-1.5 sm:px-4 sm:py-2 sm:text-[0.82rem]"
             style={{
               backgroundColor: isAdminPage ? "var(--eco-ink)" : "transparent",
               color: isAdminPage ? "#f7fafc" : "var(--eco-muted)",

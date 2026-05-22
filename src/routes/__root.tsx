@@ -90,6 +90,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      {
+        rel: "icon",
+        type: "image/svg+xml",
+        href: "/green_proof_logo_transparent.svg",
+      },
       { name: "description", content: "EcoStay Insights: A hotel environmental impact prototype for guests and managers." },
       { name: "twitter:description", content: "EcoStay Insights: A hotel environmental impact prototype for guests and managers." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c1665542-cd93-4baf-bd4b-76e90fcc1cd1/id-preview-fad43dd9--3fedf25c-296c-4230-9642-07efc31e481f.lovable.app-1779396246083.png" },
