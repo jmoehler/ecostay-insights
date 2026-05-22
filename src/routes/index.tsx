@@ -323,7 +323,7 @@ function Landing() {
                 Effortless impact, gently visible.
               </h2>
               <p className="mt-4 text-base leading-relaxed" style={{ color: "var(--eco-muted)" }}>
-                A QR code in the room opens a private view of their stay. Each sustainable choice grows
+                Personalized access for each stay and room opens a private view of their stay. Each sustainable choice grows
                 a tree, saves litres, avoids CO₂. No guilt, no friction — just a quiet feeling that
                 their stay actually counted.
               </p>
@@ -331,7 +331,7 @@ function Landing() {
                 {[
                   "Real-time CO₂, water and euro impact",
                   "Tree grows with every sustainable choice",
-                  "Zero account, zero app download",
+                  "No account, no app download",
                 ].map((x) => (
                   <li key={x} className="flex items-center gap-2">
                     <CheckCircle2 size={16} style={{ color: "var(--eco-primary)" }} /> {x}
