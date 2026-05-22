@@ -32,7 +32,7 @@ import {
   setGuestView,
 } from "@/lib/ecoStore";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/guest")({
   component: Index,
 });
 
