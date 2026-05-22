@@ -1,5 +1,5 @@
 import { Link, useRouter, useLocation } from "@tanstack/react-router";
-import { Settings, User, BarChart3, Leaf } from "lucide-react";
+import { Settings, User, BarChart3 } from "lucide-react";
 import { useConfig, useSimTime } from "@/lib/ecoHooks";
 import { setRole, getGuestView, GuestViewMode } from "@/lib/ecoStore";
 import { useEffect, useState } from "react";
@@ -42,22 +42,12 @@ export function Header() {
           borderColor: `color-mix(in oklab, ${shellTone} 14%, transparent)`,
         }}
       >
-        <Link to="/" className="flex items-center gap-2.5 font-semibold tracking-tight">
-          <span
-            className="flex h-9 w-9 items-center justify-center rounded-full"
-            style={{ backgroundColor: `color-mix(in oklab, ${headerAccent} 14%, white)` }}
-          >
-            <Leaf size={18} style={{ color: headerAccent }} />
-          </span>
-          <span className="leading-tight">
-            Green Proof
-            <span
-              className="block text-[10px] font-medium tracking-[0.12em] uppercase"
-              style={{ color: "var(--eco-muted)" }}
-            >
-              Eco Stay Prototype
-            </span>
-          </span>
+        <Link to="/" className="flex items-center">
+          <img
+            src="/green-proof-logo.jpg"
+            alt="Green Proof"
+            className="h-12 w-auto sm:h-14"
+          />
         </Link>
 
         <div
