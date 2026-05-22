@@ -10,12 +10,23 @@ import {
   Bath,
   Shirt,
   Sparkles,
+  ThumbsUp,
+  Sprout,
 } from "lucide-react";
 import { TreeField } from "@/components/TreeField";
-import { useConfig, useLiveCommitter, useLiveGuest, useSimTime } from "@/lib/ecoHooks";
+import {
+  useConfig,
+  useLiveCommitter,
+  useLiveGuest,
+  useSimTime,
+  useStays,
+} from "@/lib/ecoHooks";
 import {
   computeDailySavings,
   computeScore,
+  Decisions,
+  LiveGuest,
+  Stay,
   getGuestView,
   getSkipDefaultsForView,
   setGuestView,
@@ -38,6 +49,7 @@ function Index() {
   }, []);
 
   const { day: simDay, progress } = useSimTime(cfg);
+  const stays = useStays(cfg, simDay);
   const isGreenView = view === "green";
   const accentColor = isGreenView ? "var(--eco-primary)" : "var(--eco-blue)";
   const headerTrackColor = isGreenView
@@ -137,6 +149,8 @@ function Index() {
           {isGreenView ? (
             <>
               <TreeField score={score} cfg={cfg} />
+
+              <GuestComparisonPanel live={live} stays={stays} cfg={cfg} />
 
               <div className="grid grid-cols-2 gap-4">
                 <StatTile
@@ -283,6 +297,174 @@ function Index() {
         </div>
       </section>
     </main>
+  );
+}
+
+type GuestComparisonPanelProps = {
+  live: LiveGuest;
+  stays: Stay[];
+  cfg: ReturnType<typeof useConfig>[0];
+};
+
+function getGrowthSuggestion(decisions: Decisions, baselineTemp: number) {
+  if (!decisions.skipCleaning) {
+    return "Easy win: skip room cleaning tomorrow to lift your daily impact.";
+  }
+  if (!decisions.skipTowels) {
+    return "Easy win: skip one towel change tomorrow to move ahead.";
+  }
+  if (!decisions.skipLinen) {
+    return "Next step: skip a linen refresh and keep the same bedding another day.";
+  }
+  if (decisions.acOn) {
+    return "Easy win: keep AC off while out of the room to close the gap quickly.";
+  }
+  if (decisions.thermostat >= baselineTemp) {
+    return "Next step: lower the thermostat by 1C for a stronger daily score.";
+  }
+  return "Next step: keep today's habits and repeat them tomorrow for compounding gains.";
+}
+
+function GuestComparisonPanel({ live, stays, cfg }: GuestComparisonPanelProps) {
+  const comparison = useMemo(() => {
+    const completedDays = live.history.length;
+    if (completedDays < 1) {
+      return {
+        mode: "day-zero" as const,
+      };
+    }
+
+    const guestTotals = live.history.reduce(
+      (acc, day) => ({ co2: acc.co2 + day.co2, water: acc.water + day.water }),
+      { co2: 0, water: 0 },
+    );
+    const guestPerDay = {
+      co2: Math.max(0, guestTotals.co2 / completedDays),
+      water: Math.max(0, guestTotals.water / completedDays),
+    };
+
+    const otherStayScores = stays
+      .filter((stay) => stay.days.length > 0)
+      .map((stay) => {
+        const totals = stay.days.reduce(
+          (acc, day) => ({ co2: acc.co2 + day.co2, water: acc.water + day.water }),
+          { co2: 0, water: 0 },
+        );
+        const perDay = {
+          co2: Math.max(0, totals.co2 / stay.days.length),
+          water: Math.max(0, totals.water / stay.days.length),
+        };
+        return computeScore(perDay.co2, perDay.water, cfg);
+      });
+
+    if (otherStayScores.length < 1) {
+      return {
+        mode: "pending-baseline" as const,
+        completedDays,
+        guestPerDay,
+      };
+    }
+
+    const guestDailyScore = computeScore(guestPerDay.co2, guestPerDay.water, cfg);
+    const epsilon = 0.00001;
+    const lowerCount = otherStayScores.filter((score) => guestDailyScore > score + epsilon).length;
+    const equalCount = otherStayScores.filter((score) => Math.abs(guestDailyScore - score) <= epsilon).length;
+    const percentileRaw =
+      ((lowerCount + equalCount * 0.5) / Math.max(1, otherStayScores.length)) * 100;
+    const percentilePct = Math.min(99, Math.max(0, Math.round(percentileRaw)));
+
+    const tier =
+      percentilePct >= 85
+        ? "well-above"
+        : percentilePct >= 65
+          ? "above"
+          : percentilePct >= 40
+            ? "around"
+            : percentilePct >= 20
+              ? "slightly-below"
+              : "well-below";
+
+    const headline =
+      tier === "well-above"
+        ? "You're setting the pace."
+        : tier === "above"
+          ? "Ahead of the curve."
+          : tier === "around"
+            ? "Right in step - one small tweak puts you ahead."
+            : tier === "slightly-below"
+              ? "Room to grow. A small change today would tip you over."
+              : "Your next step is the biggest one. Small habits compound over your stay.";
+
+    return {
+      mode: "ready" as const,
+      completedDays,
+      guestPerDay,
+      tier,
+      isAtOrAboveAverage: percentilePct >= 50,
+      percentilePct,
+      headline,
+      suggestion: getGrowthSuggestion(live.decisions, cfg.savings.thermostatBaseline),
+    };
+  }, [live.history, live.decisions, stays, cfg]);
+
+  const showThumbsUp = comparison.mode === "ready" && comparison.isAtOrAboveAverage;
+  const Icon = showThumbsUp ? ThumbsUp : Sprout;
+
+  return (
+    <section
+      className="rounded-3xl border p-4"
+      style={{
+        background:
+          "linear-gradient(140deg, #124328 0%, #103923 55%, #0d2f1e 100%)",
+        borderColor: "color-mix(in oklab, #8fd7a0 25%, transparent)",
+        color: "#e9f7ee",
+      }}
+    >
+      <div className="flex items-center gap-4">
+        <div
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
+          style={{
+            backgroundColor: "color-mix(in oklab, #9ae6ae 24%, transparent)",
+            color: "#d5f7de",
+          }}
+        >
+          <Icon size={20} />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          {comparison.mode === "day-zero" ? (
+            <>
+              <div className="text-base font-semibold leading-tight">We'll start comparing after your first full day.</div>
+              <div className="mt-0.5 text-sm" style={{ color: "#cdebd6" }}>
+                Today's choices still count. You are building your day-one baseline.
+              </div>
+            </>
+          ) : null}
+
+          {comparison.mode === "pending-baseline" ? (
+            <>
+              <div className="text-base font-semibold leading-tight">We are preparing your hotel benchmark.</div>
+              <div className="mt-0.5 text-sm" style={{ color: "#cdebd6" }}>
+                Keep going. We will compare once more guest-day data is available.
+              </div>
+              <div className="mt-1.5 text-xs" style={{ color: "#b6dfc2" }}>
+                Your current pace over {comparison.completedDays} full day
+                {comparison.completedDays === 1 ? "" : "s"}: {comparison.guestPerDay.co2.toFixed(1)} kg CO2/day and {Math.round(comparison.guestPerDay.water)} L water/day.
+              </div>
+            </>
+          ) : null}
+
+          {comparison.mode === "ready" ? (
+            <>
+              <div className="text-base font-semibold leading-tight">{comparison.headline}</div>
+              <div className="mt-0.5 text-sm" style={{ color: "#cdebd6" }}>
+                Your stay is more sustainable than {comparison.percentilePct}% of other stays.
+              </div>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </section>
   );
 }
 
