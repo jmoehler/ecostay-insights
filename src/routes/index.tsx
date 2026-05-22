@@ -40,7 +40,7 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   return (
-    <div className="relative">
+    <div className="relative overflow-x-hidden">
       {/* NAV */}
       <nav className="sticky top-0 z-50 px-4 pt-4 sm:px-8">
         <div

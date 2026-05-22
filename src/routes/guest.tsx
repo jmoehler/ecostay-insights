@@ -152,16 +152,16 @@ function Index() {
 
               <GuestComparisonPanel live={live} stays={stays} cfg={cfg} />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3 min-[460px]:grid-cols-2 sm:gap-4">
                 <StatTile
-                  label="CO2 saved"
+                  label={"CO2\nsaved"}
                   value={displayCo2.toFixed(1)}
                   unit="kg"
                   icon={<Cloud size={22} />}
                   accentColor={accentColor}
                 />
                 <StatTile
-                  label="Water saved"
+                  label={"Water\nsaved"}
                   value={Math.round(displayWater).toString()}
                   unit="L"
                   icon={<Droplet size={22} />}
@@ -497,21 +497,24 @@ function StatTile({
 }) {
   return (
     <div
-      className="relative overflow-hidden rounded-3xl border p-5"
+      className="relative overflow-hidden rounded-3xl border p-4 sm:p-5"
       style={{
         backgroundColor: "color-mix(in oklab, var(--eco-surface) 88%, white)",
         borderColor: "color-mix(in oklab, var(--eco-ink) 10%, transparent)",
       }}
     >
       <div className="flex items-center justify-between">
-        <div className="text-sm" style={{ color: "var(--eco-muted)" }}>
+        <div
+          className="text-sm leading-tight whitespace-pre-line sm:whitespace-normal"
+          style={{ color: "var(--eco-muted)" }}
+        >
           {label}
         </div>
         <div style={{ color: accentColor }}>{icon}</div>
       </div>
-      <div className="mt-2 flex items-baseline gap-1">
+      <div className="mt-2 flex items-baseline gap-1 min-w-0">
         <div
-          className="text-4xl font-semibold tabular-nums tracking-tight"
+          className="min-w-0 text-[clamp(1.7rem,7vw,2.25rem)] font-semibold tabular-nums tracking-tight leading-none"
           style={{ color: "var(--eco-text)", transition: "all 400ms ease" }}
         >
           {value}
