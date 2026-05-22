@@ -52,17 +52,17 @@ export type AppConfig = {
 export const DEFAULT_CONFIG: AppConfig = {
   savings: {
     cleaningSkipWater: 12,
-    cleaningSkipCo2: 1,
+    cleaningSkipCo2: 10,
     towelSkipWater: 20,
-    towelSkipCo2: 0.5,
+    towelSkipCo2: 5,
     linenSkipWater: 30,
-    linenSkipCo2: 0.5,
+    linenSkipCo2: 5,
     thermostatCoefPerDegree: 1,
     thermostatBaseline: 20,
     thermostatMin: 16,
     thermostatMax: 28,
     acOffCo2: 3,
-    trainBonusCo2: 200,
+    trainBonusCo2: 50,
   },
   finance: {
     eurPerKgCo2: 0.08,
@@ -70,7 +70,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   },
   scoreFormula: "co2 + water",
   trees: {
-    scorePerTree: 100,
+    scorePerTree: 50,
     maxTrees: 10,
     startingTree: 0,
   },

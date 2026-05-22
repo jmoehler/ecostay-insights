@@ -217,15 +217,6 @@ function Index() {
               accentColor={accentColor}
               onToggle={() => toggle("skipLinen")}
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <ThermoCard
-              value={live.decisions.thermostat}
-              onChange={setTemp}
-              cfg={cfg}
-              accentColor={accentColor}
-            />
             <ToggleCard
               icon={<Wind size={22} />}
               title="Air conditioning"
@@ -236,6 +227,14 @@ function Index() {
               accentColor={accentColor}
               onToggle={() => toggle("acOn")}
             />
+            <div className="col-span-2">
+              <ThermoCard
+                value={live.decisions.thermostat}
+                onChange={setTemp}
+                cfg={cfg}
+                accentColor={accentColor}
+              />
+            </div>
           </div>
 
           <div className="mt-1 flex justify-center">
