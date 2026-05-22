@@ -44,7 +44,7 @@ export function Header() {
       >
         <Link to="/" className="flex items-center">
           <img
-            src="/green-proof-logo.jpg"
+            src="/green_proof_logo_transparent.svg"
             alt="Green Proof"
             className="h-12 w-auto sm:h-14"
           />
