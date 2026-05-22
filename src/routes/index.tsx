@@ -1,684 +1,439 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Droplet,
+  ArrowRight,
+  BarChart3,
+  CheckCircle2,
   Cloud,
-  Train,
-  Thermometer,
-  Wind,
-  BedDouble,
-  Bath,
-  Shirt,
+  Droplet,
+  FileBarChart,
+  Leaf,
+  Plug,
+  ShieldCheck,
   Sparkles,
-  ThumbsUp,
   Sprout,
+  TrendingUp,
+  Users,
+  Zap,
 } from "lucide-react";
-import { TreeField } from "@/components/TreeField";
-import {
-  useConfig,
-  useLiveCommitter,
-  useLiveGuest,
-  useSimTime,
-  useStays,
-} from "@/lib/ecoHooks";
-import {
-  computeDailySavings,
-  computeScore,
-  Decisions,
-  LiveGuest,
-  Stay,
-  getGuestView,
-  getSkipDefaultsForView,
-  setGuestView,
-} from "@/lib/ecoStore";
+import heroImg from "@/assets/landing-hero.jpg";
+import managerImg from "@/assets/landing-manager.jpg";
+import guestImg from "@/assets/landing-guest.jpg";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Green Proof — Real-time sustainability for Casablanca PMS" },
+      {
+        name: "description",
+        content:
+          "Green Proof turns every guest decision into verifiable sustainability data. A PMS add-on built for Casablanca, open to any third-party integration.",
+      },
+      { property: "og:title", content: "Green Proof — Real-time sustainability for Casablanca PMS" },
+      {
+        property: "og:description",
+        content:
+          "Turn your hotel's sustainability into a credible competitive advantage. EmpCo-ready reporting, gentle guest nudges, automated from PMS data.",
+      },
+    ],
+  }),
+  component: Landing,
 });
 
-type GuestView = "green" | "conventional";
-
-function Index() {
-  const [cfg] = useConfig();
-  useLiveCommitter(cfg);
-  const [live, setLive] = useLiveGuest(cfg);
-  const [view, setView] = useState<GuestView>("green");
-
-  useEffect(() => {
-    setView(getGuestView());
-  }, []);
-
-  const { day: simDay, progress } = useSimTime(cfg);
-  const stays = useStays(cfg, simDay);
-  const isGreenView = view === "green";
-  const accentColor = isGreenView ? "var(--eco-primary)" : "var(--eco-blue)";
-  const headerTrackColor = isGreenView
-    ? "color-mix(in oklab, var(--eco-primary) 24%, white)"
-    : "color-mix(in oklab, var(--eco-blue) 14%, white)";
-  const headerFillColor = isGreenView
-    ? "color-mix(in oklab, var(--eco-primary) 90%, #72bf7d)"
-    : "var(--eco-blue)";
-  const panelGlow = isGreenView
-    ? "radial-gradient(circle at 10% -10%, color-mix(in oklab, var(--eco-primary) 18%, white) 0%, transparent 46%), radial-gradient(circle at 94% 0%, color-mix(in oklab, var(--eco-primary) 10%, white) 0%, transparent 48%)"
-    : "radial-gradient(circle at 10% -10%, color-mix(in oklab, var(--eco-blue) 7%, white) 0%, transparent 46%), radial-gradient(circle at 94% 0%, color-mix(in oklab, var(--eco-blue) 10%, white) 0%, transparent 46%)";
-
-  const liveDayProgress =
-    simDay === live.stayStartDay ? Math.max(0, progress - live.stayStartProgress) : progress;
-
-  const todayProjected = computeDailySavings(live.decisions, cfg);
-  const todayLive = {
-    co2: todayProjected.co2 * liveDayProgress,
-    water: todayProjected.water * liveDayProgress,
-  };
-
-  const totalCo2 = live.history.reduce((sum, d) => sum + d.co2, 0) + todayLive.co2;
-  const totalWater = live.history.reduce((sum, d) => sum + d.water, 0) + todayLive.water;
-  const trainBonus =
-    live.decisions.arrivedByTrain && !live.trainAdded ? cfg.savings.trainBonusCo2 : 0;
-
-  const displayCo2 = Math.max(0, totalCo2 + trainBonus);
-  const displayWater = Math.max(0, totalWater);
-  const score = computeScore(displayCo2, displayWater, cfg);
-
-  const toggle = (key: "skipCleaning" | "skipTowels" | "skipLinen" | "acOn") =>
-    setLive({
-      ...live,
-      decisions: { ...live.decisions, [key]: !live.decisions[key] },
-    });
-
-  const setTemp = (temp: number) =>
-    setLive({
-      ...live,
-      decisions: { ...live.decisions, thermostat: temp },
-    });
-
-  const impact = useMemo(() => {
-    const s = cfg.savings;
-    return {
-      cleaning: `If skipped: +${s.cleaningSkipWater} L and +${s.cleaningSkipCo2} kg CO2/day`,
-      towels: `If skipped: +${s.towelSkipWater} L and +${s.towelSkipCo2} kg CO2/day`,
-      linen: `If skipped: +${s.linenSkipWater} L and +${s.linenSkipCo2} kg CO2/day`,
-      acOff: `+${s.acOffCo2} kg CO2/day`,
-    };
-  }, [cfg]);
-
-  const applyViewDefaults = (nextView: GuestView) => {
-    setView(nextView);
-    setGuestView(nextView);
-    setLive({
-      ...live,
-      decisions: {
-        ...live.decisions,
-        ...getSkipDefaultsForView(nextView),
-      },
-    });
-  };
-
+function Landing() {
   return (
-    <main className="mx-auto max-w-6xl p-6">
-      <section
-        className="relative overflow-hidden rounded-[2rem] border shadow-[0_24px_50px_-42px_rgba(12,29,42,0.75)]"
-        style={{
-          backgroundColor: "color-mix(in oklab, var(--eco-surface) 82%, white)",
-          borderColor: "color-mix(in oklab, var(--eco-ink) 10%, transparent)",
-          backdropFilter: "blur(8px)",
-        }}
-      >
+    <div className="relative">
+      {/* NAV */}
+      <nav className="sticky top-0 z-50 px-4 pt-4 sm:px-8">
         <div
-          className="pointer-events-none absolute inset-0"
+          className="eco-shell mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6"
           style={{
-            background: panelGlow,
+            background:
+              "linear-gradient(175deg, color-mix(in oklab, var(--eco-surface) 94%, white) 0%, color-mix(in oklab, var(--eco-primary) 8%, white) 100%)",
           }}
-        />
-
-        <div
-          className="absolute left-0 right-0 top-0 h-1"
-          style={{ backgroundColor: headerTrackColor }}
         >
-          <div
-            className="h-full"
-            style={{
-              width: `${progress * 100}%`,
-              backgroundColor: headerFillColor,
-              transition: "width 250ms linear",
-            }}
-          />
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/green_proof_logo_transparent.svg" alt="Green Proof" className="h-9 w-auto sm:h-10" />
+          </Link>
+          <div className="hidden items-center gap-6 text-sm font-semibold md:flex" style={{ color: "var(--eco-text)" }}>
+            <a href="#how" className="hover:opacity-70">How it works</a>
+            <a href="#hotels" className="hover:opacity-70">For hotels</a>
+            <a href="#guests" className="hover:opacity-70">For guests</a>
+            <a href="#pilot" className="hover:opacity-70">Pilot</a>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/manager"
+              className="hidden items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold sm:inline-flex"
+              style={{ backgroundColor: "transparent", color: "var(--eco-text)" }}
+            >
+              <BarChart3 size={14} /> Manager demo
+            </Link>
+            <Link
+              to="/guest"
+              className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold shadow-sm transition hover:translate-y-[-1px]"
+              style={{ backgroundColor: "var(--eco-ink)", color: "#f7fafc" }}
+            >
+              Try the live demo <ArrowRight size={14} />
+            </Link>
+          </div>
         </div>
+      </nav>
 
-        <div className="relative flex flex-col gap-4 p-6">
-          {isGreenView ? (
-            <>
-              <TreeField score={score} cfg={cfg} />
+      {/* HERO */}
+      <section className="relative px-4 pb-16 pt-10 sm:px-8 sm:pt-16">
+        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.1fr_1fr] lg:items-center">
+          <div>
+            <div
+              className="mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold"
+              style={{
+                borderColor: "color-mix(in oklab, var(--eco-primary) 30%, transparent)",
+                backgroundColor: "color-mix(in oklab, var(--eco-primary) 8%, white)",
+                color: "var(--eco-primary)",
+              }}
+            >
+              <Sparkles size={12} /> A Casablanca PMS add-on · Open to third-party integrations
+            </div>
+            <h1
+              className="text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
+              style={{ color: "var(--eco-text)" }}
+            >
+              Turn every guest decision into <span style={{ color: "var(--eco-primary)" }}>verifiable</span> sustainability.
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-relaxed sm:text-lg" style={{ color: "var(--eco-muted)" }}>
+              Green Proof captures the small choices that already happen during a stay — skipped cleanings,
+              fresh towels declined, train arrivals — and turns them into live impact for guests and
+              EmpCo-ready reports for your team. No new workflows. No greenwashing.
+            </p>
 
-              <GuestComparisonPanel live={live} stays={stays} cfg={cfg} />
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <Link
+                to="/manager"
+                className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold shadow-md transition hover:translate-y-[-1px]"
+                style={{ backgroundColor: "var(--eco-primary)", color: "#fff" }}
+              >
+                See the Manager dashboard <ArrowRight size={16} />
+              </Link>
+              <Link
+                to="/guest"
+                className="inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-bold transition hover:bg-white"
+                style={{
+                  borderColor: "color-mix(in oklab, var(--eco-ink) 20%, transparent)",
+                  color: "var(--eco-text)",
+                }}
+              >
+                Open the Guest view
+              </Link>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <StatTile
-                  label="CO2 saved"
-                  value={displayCo2.toFixed(1)}
-                  unit="kg"
-                  icon={<Cloud size={22} />}
-                  accentColor={accentColor}
-                />
-                <StatTile
-                  label="Water saved"
-                  value={Math.round(displayWater).toString()}
-                  unit="L"
-                  icon={<Droplet size={22} />}
-                  accentColor={accentColor}
-                />
-              </div>
-
-              <Card>
-                <div className="flex items-center gap-4">
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-full"
-                    style={{
-                      backgroundColor: `color-mix(in oklab, ${accentColor} 10%, white)`,
-                      color: accentColor,
-                    }}
-                  >
-                    <Train size={22} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium">Arrived by train</div>
-                    <div className="text-xs" style={{ color: "var(--eco-muted)" }}>
-                      From booking data.
-                    </div>
-                  </div>
-                  <div
-                    className="rounded-full border px-3 py-1 text-sm font-medium"
-                    style={{
-                      backgroundColor: `color-mix(in oklab, ${accentColor} 8%, white)`,
-                      color: accentColor,
-                      borderColor: `color-mix(in oklab, ${accentColor} 30%, white)`,
-                    }}
-                  >
-                    -{cfg.savings.trainBonusCo2} kg CO2
-                  </div>
-                </div>
-              </Card>
-            </>
-          ) : null}
-
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-            <ToggleCard
-              icon={<Sparkles size={22} />}
-              title="Request room cleaning"
-              tooltip={impact.cleaning}
-              active={!live.decisions.skipCleaning}
-              activeLabel="Requested"
-              inactiveLabel="Skipped"
-              compactActiveLabel="Req"
-              compactInactiveLabel="Skip"
-              highlightWhenActive={false}
-              accentColor={accentColor}
-              onToggle={() => toggle("skipCleaning")}
-            />
-            <ToggleCard
-              icon={<Bath size={22} />}
-              title="Request towel change"
-              tooltip={impact.towels}
-              active={!live.decisions.skipTowels}
-              activeLabel="Requested"
-              inactiveLabel="Skipped"
-              compactActiveLabel="Req"
-              compactInactiveLabel="Skip"
-              highlightWhenActive={false}
-              accentColor={accentColor}
-              onToggle={() => toggle("skipTowels")}
-            />
-            <ToggleCard
-              icon={<Shirt size={22} />}
-              title="Request linen change"
-              tooltip={impact.linen}
-              active={!live.decisions.skipLinen}
-              activeLabel="Requested"
-              inactiveLabel="Skipped"
-              compactActiveLabel="Req"
-              compactInactiveLabel="Skip"
-              highlightWhenActive={false}
-              accentColor={accentColor}
-              onToggle={() => toggle("skipLinen")}
-            />
-            <ToggleCard
-              icon={<Wind size={22} />}
-              title="Air conditioning"
-              tooltip={live.decisions.acOn ? "AC on - full draw" : `AC off - ${impact.acOff}`}
-              active={!live.decisions.acOn}
-              activeLabel="Off"
-              inactiveLabel="On"
-              accentColor={accentColor}
-              onToggle={() => toggle("acOn")}
-            />
-            <div className="col-span-2">
-              <ThermoCard
-                value={live.decisions.thermostat}
-                onChange={setTemp}
-                cfg={cfg}
-                accentColor={accentColor}
-              />
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs font-medium" style={{ color: "var(--eco-muted)" }}>
+              <span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} style={{ color: "var(--eco-primary)" }} /> EmpCo-ready reporting</span>
+              <span className="inline-flex items-center gap-1.5"><Plug size={14} style={{ color: "var(--eco-primary)" }} /> Native Casablanca PMS</span>
+              <span className="inline-flex items-center gap-1.5"><Zap size={14} style={{ color: "var(--eco-primary)" }} /> Real-time, automated</span>
             </div>
           </div>
 
-          <div className="mt-1 flex justify-center">
+          <div className="relative">
             <div
-              className="inline-flex items-center rounded-full border p-1"
-              style={{
-                backgroundColor: "color-mix(in oklab, var(--eco-surface) 84%, white)",
-                borderColor: "var(--border)",
-              }}
+              className="overflow-hidden rounded-3xl shadow-2xl ring-1"
+              style={{ boxShadow: "0 40px 80px -40px rgba(17,37,56,0.45)", borderColor: "var(--border)" }}
             >
-              <button
-                onClick={() => applyViewDefaults("green")}
-                className="rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor:
-                    view === "green"
-                      ? "color-mix(in oklab, var(--eco-primary) 16%, white)"
-                      : "transparent",
-                  color: view === "green" ? "var(--eco-primary)" : "var(--eco-muted)",
-                }}
-              >
-                Green View
-              </button>
-              <button
-                onClick={() => applyViewDefaults("conventional")}
-                className="rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: view === "conventional" ? "var(--eco-ink)" : "transparent",
-                  color: view === "conventional" ? "#ffffff" : "var(--eco-muted)",
-                }}
-              >
-                Conventional View
-              </button>
+              <img src={heroImg} alt="Sustainable hotel by a forest at golden hour" width={1600} height={1200} className="h-full w-full object-cover" />
+            </div>
+            {/* floating stat cards */}
+            <div
+              className="absolute -left-3 bottom-6 hidden rounded-2xl border bg-white/95 p-3 shadow-xl backdrop-blur sm:flex sm:items-center sm:gap-3"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <div className="grid h-10 w-10 place-items-center rounded-full" style={{ backgroundColor: "color-mix(in oklab, var(--eco-primary) 14%, white)", color: "var(--eco-primary)" }}>
+                <Cloud size={18} />
+              </div>
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--eco-muted)" }}>CO₂ saved</div>
+                <div className="text-lg font-bold" style={{ color: "var(--eco-text)" }}>162.5 t<span className="ml-1 text-xs font-medium" style={{ color: "var(--eco-muted)" }}>last 120 days</span></div>
+              </div>
+            </div>
+            <div
+              className="absolute -right-3 top-6 hidden rounded-2xl border bg-white/95 p-3 shadow-xl backdrop-blur sm:flex sm:items-center sm:gap-3"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <div className="grid h-10 w-10 place-items-center rounded-full" style={{ backgroundColor: "color-mix(in oklab, var(--eco-blue) 14%, white)", color: "var(--eco-blue)" }}>
+                <Droplet size={18} />
+              </div>
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--eco-muted)" }}>Water saved</div>
+                <div className="text-lg font-bold" style={{ color: "var(--eco-text)" }}>266.2 kL</div>
+              </div>
             </div>
           </div>
         </div>
       </section>
-    </main>
-  );
-}
 
-type GuestComparisonPanelProps = {
-  live: LiveGuest;
-  stays: Stay[];
-  cfg: ReturnType<typeof useConfig>[0];
-};
-
-function getGrowthSuggestion(decisions: Decisions, baselineTemp: number) {
-  if (!decisions.skipCleaning) {
-    return "Easy win: skip room cleaning tomorrow to lift your daily impact.";
-  }
-  if (!decisions.skipTowels) {
-    return "Easy win: skip one towel change tomorrow to move ahead.";
-  }
-  if (!decisions.skipLinen) {
-    return "Next step: skip a linen refresh and keep the same bedding another day.";
-  }
-  if (decisions.acOn) {
-    return "Easy win: keep AC off while out of the room to close the gap quickly.";
-  }
-  if (decisions.thermostat >= baselineTemp) {
-    return "Next step: lower the thermostat by 1C for a stronger daily score.";
-  }
-  return "Next step: keep today's habits and repeat them tomorrow for compounding gains.";
-}
-
-function GuestComparisonPanel({ live, stays, cfg }: GuestComparisonPanelProps) {
-  const comparison = useMemo(() => {
-    const completedDays = live.history.length;
-    if (completedDays < 1) {
-      return {
-        mode: "day-zero" as const,
-      };
-    }
-
-    const guestTotals = live.history.reduce(
-      (acc, day) => ({ co2: acc.co2 + day.co2, water: acc.water + day.water }),
-      { co2: 0, water: 0 },
-    );
-    const guestPerDay = {
-      co2: Math.max(0, guestTotals.co2 / completedDays),
-      water: Math.max(0, guestTotals.water / completedDays),
-    };
-
-    const otherStayScores = stays
-      .filter((stay) => stay.days.length > 0)
-      .map((stay) => {
-        const totals = stay.days.reduce(
-          (acc, day) => ({ co2: acc.co2 + day.co2, water: acc.water + day.water }),
-          { co2: 0, water: 0 },
-        );
-        const perDay = {
-          co2: Math.max(0, totals.co2 / stay.days.length),
-          water: Math.max(0, totals.water / stay.days.length),
-        };
-        return computeScore(perDay.co2, perDay.water, cfg);
-      });
-
-    if (otherStayScores.length < 1) {
-      return {
-        mode: "pending-baseline" as const,
-        completedDays,
-        guestPerDay,
-      };
-    }
-
-    const guestDailyScore = computeScore(guestPerDay.co2, guestPerDay.water, cfg);
-    const epsilon = 0.00001;
-    const lowerCount = otherStayScores.filter((score) => guestDailyScore > score + epsilon).length;
-    const equalCount = otherStayScores.filter((score) => Math.abs(guestDailyScore - score) <= epsilon).length;
-    const percentileRaw =
-      ((lowerCount + equalCount * 0.5) / Math.max(1, otherStayScores.length)) * 100;
-    const percentilePct = Math.min(99, Math.max(0, Math.round(percentileRaw)));
-
-    const tier =
-      percentilePct >= 85
-        ? "well-above"
-        : percentilePct >= 65
-          ? "above"
-          : percentilePct >= 40
-            ? "around"
-            : percentilePct >= 20
-              ? "slightly-below"
-              : "well-below";
-
-    const headline =
-      tier === "well-above"
-        ? "You're setting the pace."
-        : tier === "above"
-          ? "Ahead of the curve."
-          : tier === "around"
-            ? "Right in step - one small tweak puts you ahead."
-            : tier === "slightly-below"
-              ? "Room to grow. A small change today would tip you over."
-              : "Your next step is the biggest one. Small habits compound over your stay.";
-
-    return {
-      mode: "ready" as const,
-      completedDays,
-      guestPerDay,
-      tier,
-      isAtOrAboveAverage: percentilePct >= 50,
-      percentilePct,
-      headline,
-      suggestion: getGrowthSuggestion(live.decisions, cfg.savings.thermostatBaseline),
-    };
-  }, [live.history, live.decisions, stays, cfg]);
-
-  const showThumbsUp = comparison.mode === "ready" && comparison.isAtOrAboveAverage;
-  const Icon = showThumbsUp ? ThumbsUp : Sprout;
-
-  return (
-    <section
-      className="rounded-3xl border p-4"
-      style={{
-        background:
-          "linear-gradient(140deg, #124328 0%, #103923 55%, #0d2f1e 100%)",
-        borderColor: "color-mix(in oklab, #8fd7a0 25%, transparent)",
-        color: "#e9f7ee",
-      }}
-    >
-      <div className="flex items-center gap-4">
+      {/* PMS BAR */}
+      <section className="px-4 sm:px-8">
         <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
+          className="mx-auto flex max-w-6xl flex-col items-center gap-4 rounded-2xl border px-6 py-5 sm:flex-row sm:justify-between"
           style={{
-            backgroundColor: "color-mix(in oklab, #9ae6ae 24%, transparent)",
-            color: "#d5f7de",
+            borderColor: "var(--border)",
+            backgroundColor: "color-mix(in oklab, var(--eco-surface) 96%, white)",
           }}
         >
-          <Icon size={20} />
+          <div className="flex items-center gap-3 text-sm font-semibold" style={{ color: "var(--eco-text)" }}>
+            <Plug size={18} style={{ color: "var(--eco-primary)" }} />
+            Built as a native add-on for <span className="font-extrabold">Casablanca PMS</span>
+          </div>
+          <div className="text-xs sm:text-sm" style={{ color: "var(--eco-muted)" }}>
+            Open architecture — connects to any third-party PMS, IoT, or ESG tool via API.
+          </div>
         </div>
+      </section>
 
-        <div className="min-w-0 flex-1">
-          {comparison.mode === "day-zero" ? (
-            <>
-              <div className="text-base font-semibold leading-tight">We'll start comparing after your first full day.</div>
-              <div className="mt-0.5 text-sm" style={{ color: "#cdebd6" }}>
-                Today's choices still count. You are building your day-one baseline.
-              </div>
-            </>
-          ) : null}
-
-          {comparison.mode === "pending-baseline" ? (
-            <>
-              <div className="text-base font-semibold leading-tight">We are preparing your hotel benchmark.</div>
-              <div className="mt-0.5 text-sm" style={{ color: "#cdebd6" }}>
-                Keep going. We will compare once more guest-day data is available.
-              </div>
-              <div className="mt-1.5 text-xs" style={{ color: "#b6dfc2" }}>
-                Your current pace over {comparison.completedDays} full day
-                {comparison.completedDays === 1 ? "" : "s"}: {comparison.guestPerDay.co2.toFixed(1)} kg CO2/day and {Math.round(comparison.guestPerDay.water)} L water/day.
-              </div>
-            </>
-          ) : null}
-
-          {comparison.mode === "ready" ? (
-            <>
-              <div className="text-base font-semibold leading-tight">{comparison.headline}</div>
-              <div className="mt-0.5 text-sm" style={{ color: "#cdebd6" }}>
-                Your stay is more sustainable than {comparison.percentilePct}% of other stays.
-              </div>
-            </>
-          ) : null}
+      {/* PROBLEM */}
+      <section className="px-4 py-20 sm:px-8">
+        <div className="mx-auto max-w-5xl text-center">
+          <div className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "var(--eco-primary)" }}>The problem</div>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: "var(--eco-text)" }}>
+            You do the work. Nobody sees it.
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed" style={{ color: "var(--eco-muted)" }}>
+            Sustainability-driven managers invest seriously in responsible operations — but lack a credible
+            way to make those efforts visible to guests and regulators. Existing systems leave a gap between
+            what hotels do and what anyone is able to see.
+          </p>
         </div>
-      </div>
-    </section>
-  );
-}
+      </section>
 
-function Card({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="rounded-3xl border p-4"
-      style={{
-        backgroundColor: "color-mix(in oklab, var(--eco-surface) 88%, white)",
-        borderColor: "color-mix(in oklab, var(--eco-ink) 10%, transparent)",
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function StatTile({
-  label,
-  value,
-  unit,
-  icon,
-  accentColor,
-}: {
-  label: string;
-  value: string;
-  unit: string;
-  icon: React.ReactNode;
-  accentColor: string;
-}) {
-  return (
-    <div
-      className="relative overflow-hidden rounded-3xl border p-5"
-      style={{
-        backgroundColor: "color-mix(in oklab, var(--eco-surface) 88%, white)",
-        borderColor: "color-mix(in oklab, var(--eco-ink) 10%, transparent)",
-      }}
-    >
-      <div className="flex items-center justify-between">
-        <div className="text-sm" style={{ color: "var(--eco-muted)" }}>
-          {label}
+      {/* FOR HOTELS */}
+      <section id="hotels" className="px-4 pb-20 sm:px-8">
+        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+          <div className="order-2 lg:order-1">
+            <div className="overflow-hidden rounded-3xl shadow-xl">
+              <img src={managerImg} alt="Manager reviewing the Green Proof dashboard" width={1400} height={1000} loading="lazy" className="h-full w-full object-cover" />
+            </div>
+          </div>
+          <div className="order-1 lg:order-2">
+            <div className="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "var(--eco-primary)" }}>
+              <BarChart3 size={14} /> For hotel managers
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: "var(--eco-text)" }}>
+              Sustainability that proves itself.
+            </h2>
+            <p className="mt-4 text-base leading-relaxed" style={{ color: "var(--eco-muted)" }}>
+              Every skipped cleaning, every towel reuse, every train arrival is captured automatically in
+              your PMS. The dashboard quantifies the impact in CO₂, water and euros — and exports the
+              evidence you need for certification, EmpCo compliance and confident guest communication.
+            </p>
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+              {[
+                { icon: TrendingUp, t: "Revenue lift", d: "Direct bookings & sustainable-stay upsells." },
+                { icon: ShieldCheck, t: "Greenwashing-proof", d: "Real-time, evidence-based reporting." },
+                { icon: FileBarChart, t: "EmpCo-ready", d: "One-click exports for audits & certifications." },
+                { icon: Users, t: "Brand differentiation", d: "Visible impact your guests remember." },
+              ].map(({ icon: Icon, t, d }) => (
+                <li key={t} className="flex gap-3 rounded-2xl border p-4" style={{ borderColor: "var(--border)", backgroundColor: "var(--card)" }}>
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: "color-mix(in oklab, var(--eco-primary) 12%, white)", color: "var(--eco-primary)" }}>
+                    <Icon size={16} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold" style={{ color: "var(--eco-text)" }}>{t}</div>
+                    <div className="text-xs leading-relaxed" style={{ color: "var(--eco-muted)" }}>{d}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <Link
+              to="/manager"
+              className="mt-7 inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold shadow-md transition hover:translate-y-[-1px]"
+              style={{ backgroundColor: "var(--eco-ink)", color: "#f7fafc" }}
+            >
+              Open Manager dashboard <ArrowRight size={16} />
+            </Link>
+          </div>
         </div>
-        <div style={{ color: accentColor }}>{icon}</div>
-      </div>
-      <div className="mt-2 flex items-baseline gap-1">
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section id="how" className="px-4 pb-20 sm:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-10 max-w-2xl">
+            <div className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "var(--eco-primary)" }}>How it works</div>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: "var(--eco-text)" }}>
+              Three layers. Zero extra work.
+            </h2>
+          </div>
+          <div className="grid gap-5 md:grid-cols-3">
+            {[
+              {
+                n: "01",
+                icon: Plug,
+                t: "Connects to your PMS",
+                d: "Native to Casablanca, open API for any other PMS, IoT sensor or ESG tool you already run.",
+              },
+              {
+                n: "02",
+                icon: Leaf,
+                t: "Captures every choice",
+                d: "Skipped cleanings, towel/linen reuse, thermostat, AC and arrival mode become live data — no manual entry.",
+              },
+              {
+                n: "03",
+                icon: FileBarChart,
+                t: "Proves it to everyone",
+                d: "Guests see real-time impact. Managers get EmpCo-ready reports and certification evidence.",
+              },
+            ].map(({ n, icon: Icon, t, d }) => (
+              <div
+                key={n}
+                className="rounded-3xl border p-6"
+                style={{
+                  borderColor: "var(--border)",
+                  backgroundColor: "var(--card)",
+                  boxShadow: "0 24px 40px -32px rgba(17,37,56,0.35)",
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="grid h-11 w-11 place-items-center rounded-2xl" style={{ backgroundColor: "color-mix(in oklab, var(--eco-primary) 14%, white)", color: "var(--eco-primary)" }}>
+                    <Icon size={20} />
+                  </div>
+                  <span className="text-xs font-bold tracking-widest" style={{ color: "var(--eco-muted)" }}>{n}</span>
+                </div>
+                <h3 className="mt-5 text-lg font-bold" style={{ color: "var(--eco-text)" }}>{t}</h3>
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--eco-muted)" }}>{d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FOR GUESTS */}
+      <section id="guests" className="px-4 pb-20 sm:px-8">
         <div
-          className="text-4xl font-semibold tabular-nums tracking-tight"
-          style={{ color: "var(--eco-text)", transition: "all 400ms ease" }}
-        >
-          {value}
-        </div>
-        <div className="text-sm" style={{ color: "var(--eco-muted)" }}>
-          {unit}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ToggleCard({
-  icon,
-  title,
-  tooltip,
-  active,
-  activeLabel = "On",
-  inactiveLabel = "Off",
-  compactActiveLabel,
-  compactInactiveLabel,
-  highlightWhenActive = true,
-  accentColor,
-  onToggle,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  tooltip: string;
-  active: boolean;
-  activeLabel?: string;
-  inactiveLabel?: string;
-  compactActiveLabel?: string;
-  compactInactiveLabel?: string;
-  highlightWhenActive?: boolean;
-  accentColor: string;
-  onToggle: () => void;
-}) {
-  const highlighted = highlightWhenActive ? active : !active;
-  const fullStatusLabel = active ? activeLabel : inactiveLabel;
-  const defaultCompactLabel = (label: string) => {
-    const normalized = label.trim().toLowerCase();
-    if (normalized === "requested") return "Req.";
-    if (normalized === "skipped") return "Skip";
-    if (label.length <= 6) return label;
-    return `${label.slice(0, 4)}.`;
-  };
-  const compactStatusLabel = active
-    ? (compactActiveLabel ?? defaultCompactLabel(activeLabel))
-    : (compactInactiveLabel ?? defaultCompactLabel(inactiveLabel));
-
-  return (
-    <button
-      onClick={onToggle}
-      className="group flex flex-col gap-2.5 rounded-3xl border p-3.5 text-left transition-all active:scale-[0.98] sm:gap-3 sm:p-4"
-      style={{
-        backgroundColor: highlighted
-          ? `color-mix(in oklab, ${accentColor} 10%, white)`
-          : "color-mix(in oklab, var(--eco-surface) 88%, white)",
-        borderColor: highlighted
-          ? `color-mix(in oklab, ${accentColor} 38%, white)`
-          : "color-mix(in oklab, var(--eco-ink) 10%, transparent)",
-      }}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-11 sm:w-11"
+          className="mx-auto max-w-6xl overflow-hidden rounded-3xl border"
           style={{
-            backgroundColor: highlighted
-              ? accentColor
-              : `color-mix(in oklab, ${accentColor} 10%, white)`,
-            color: highlighted ? "var(--primary-foreground)" : "var(--eco-muted)",
+            borderColor: "var(--border)",
+            background:
+              "linear-gradient(160deg, color-mix(in oklab, var(--eco-primary) 6%, white) 0%, color-mix(in oklab, var(--eco-blue) 5%, white) 100%)",
           }}
         >
-          {icon}
+          <div className="grid gap-0 lg:grid-cols-2">
+            <div className="p-8 sm:p-12">
+              <div className="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "var(--eco-primary)" }}>
+                <Sprout size={14} /> For your guests
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: "var(--eco-text)" }}>
+                Effortless impact, gently visible.
+              </h2>
+              <p className="mt-4 text-base leading-relaxed" style={{ color: "var(--eco-muted)" }}>
+                A QR code in the room opens a private view of their stay. Each sustainable choice grows
+                a tree, saves litres, avoids CO₂. No guilt, no friction — just a quiet feeling that
+                their stay actually counted.
+              </p>
+              <ul className="mt-6 space-y-2.5 text-sm" style={{ color: "var(--eco-text)" }}>
+                {[
+                  "Real-time CO₂, water and euro impact",
+                  "Tree grows with every sustainable choice",
+                  "Zero account, zero app download",
+                ].map((x) => (
+                  <li key={x} className="flex items-center gap-2">
+                    <CheckCircle2 size={16} style={{ color: "var(--eco-primary)" }} /> {x}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/guest"
+                className="mt-7 inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold shadow-md transition hover:translate-y-[-1px]"
+                style={{ backgroundColor: "var(--eco-primary)", color: "#fff" }}
+              >
+                Try the guest view <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="relative min-h-[280px] lg:min-h-full">
+              <img src={guestImg} alt="Guest enjoying a sustainable hotel stay" width={1400} height={1000} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+            </div>
+          </div>
         </div>
-        <span
-          className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium leading-none sm:gap-1.5 sm:px-2.5 sm:text-xs"
-          style={{
-            backgroundColor: highlighted
-              ? `color-mix(in oklab, ${accentColor} 24%, white)`
-              : `color-mix(in oklab, ${accentColor} 7%, white)`,
-            color: highlighted ? accentColor : "var(--eco-muted)",
-          }}
-          aria-label={fullStatusLabel}
-        >
-          <span
-            className="hidden h-1.5 w-1.5 rounded-full sm:block"
-            style={{
-              backgroundColor: highlighted
-                ? accentColor
-                : "color-mix(in oklab, var(--eco-ink) 24%, transparent)",
-            }}
-          />
-          <span className="hidden sm:inline">{fullStatusLabel}</span>
-          <span className="sm:hidden">{compactStatusLabel}</span>
-        </span>
-      </div>
-      <div>
-        <div className="text-[15px] font-medium leading-snug sm:text-base">{title}</div>
-        <div className="text-xs" style={{ color: "var(--eco-muted)" }}>
-          {tooltip}
-        </div>
-      </div>
-    </button>
-  );
-}
+      </section>
 
-function ThermoCard({
-  value,
-  onChange,
-  cfg,
-  accentColor,
-}: {
-  value: number;
-  onChange: (next: number) => void;
-  cfg: ReturnType<typeof useConfig>[0];
-  accentColor: string;
-}) {
-  const {
-    thermostatMin: min,
-    thermostatMax: max,
-    thermostatBaseline: base,
-    thermostatCoefPerDegree: coef,
-  } = cfg.savings;
-
-  const diff = base - value;
-  const impact =
-    diff > 0
-      ? `+${(diff * coef).toFixed(1)} kg CO2/day`
-      : diff < 0
-        ? `-${(Math.abs(diff) * coef).toFixed(1)} kg CO2/day`
-        : "Baseline";
-
-  return (
-    <div
-      className="flex flex-col gap-3 rounded-3xl border p-4"
-      style={{
-        backgroundColor: "color-mix(in oklab, var(--eco-surface) 88%, white)",
-        borderColor: "color-mix(in oklab, var(--eco-ink) 10%, transparent)",
-      }}
-    >
-      <div className="flex items-center justify-between">
+      {/* PILOT */}
+      <section id="pilot" className="px-4 pb-24 sm:px-8">
         <div
-          className="flex h-11 w-11 items-center justify-center rounded-full"
+          className="mx-auto max-w-6xl rounded-3xl p-8 sm:p-12"
           style={{
-            backgroundColor: `color-mix(in oklab, ${accentColor} 10%, white)`,
-            color: accentColor,
+            background:
+              "linear-gradient(160deg, var(--eco-ink) 0%, color-mix(in oklab, var(--eco-ink) 70%, var(--eco-primary)) 100%)",
+            color: "#f7fafc",
           }}
         >
-          <Thermometer size={22} />
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:items-center">
+            <div>
+              <div className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "color-mix(in oklab, var(--eco-primary) 70%, white)" }}>
+                Pilot proposal
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Run a 3-month Green Proof pilot at your property.
+              </h2>
+              <p className="mt-4 max-w-xl text-base leading-relaxed" style={{ color: "rgba(247,250,252,0.78)" }}>
+                Ideal partner: a mid-sized leisure hotel (60–120 rooms) with sustainability initiatives
+                already in place and a motivated GM or operations lead.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <a
+                  href="mailto:hello@greenproof.app?subject=Green%20Proof%20Pilot"
+                  className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold shadow-md transition hover:translate-y-[-1px]"
+                  style={{ backgroundColor: "#fff", color: "var(--eco-ink)" }}
+                >
+                  Talk to the team <ArrowRight size={16} />
+                </a>
+                <Link
+                  to="/manager"
+                  className="inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-bold"
+                  style={{ borderColor: "rgba(255,255,255,0.3)", color: "#fff" }}
+                >
+                  See live demo
+                </Link>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              {[
+                { t: "Setup", d: "4–6 weeks" },
+                { t: "Pilot run", d: "3 months" },
+                { t: "Wrap-up & reporting", d: "2 weeks" },
+              ].map((s, i) => (
+                <div
+                  key={s.t}
+                  className="flex items-center gap-4 rounded-2xl border p-4"
+                  style={{
+                    borderColor: "rgba(255,255,255,0.16)",
+                    backgroundColor: "rgba(255,255,255,0.06)",
+                  }}
+                >
+                  <div className="grid h-9 w-9 place-items-center rounded-full text-xs font-bold" style={{ backgroundColor: "color-mix(in oklab, var(--eco-primary) 70%, white)", color: "var(--eco-ink)" }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-wider" style={{ color: "rgba(247,250,252,0.6)" }}>{s.t}</div>
+                    <div className="text-base font-semibold">{s.d}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="text-2xl font-semibold tabular-nums">{value}C</div>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={1}
-        value={value}
-        onChange={(event) => onChange(parseInt(event.target.value, 10))}
-        className="w-full"
-        style={{ accentColor }}
-      />
-      <div className="flex justify-between text-xs" style={{ color: "var(--eco-muted)" }}>
-        <span>Thermostat</span>
-        <span>{impact}</span>
-      </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="px-4 pb-10 sm:px-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 border-t pt-6 text-xs sm:flex-row" style={{ borderColor: "var(--border)", color: "var(--eco-muted)" }}>
+          <div className="flex items-center gap-2">
+            <img src="/green_proof_logo_transparent.svg" alt="" className="h-6 w-auto" />
+            <span>Green Proof · A Casablanca PMS add-on</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link to="/guest" className="hover:opacity-70">Guest</Link>
+            <Link to="/manager" className="hover:opacity-70">Manager</Link>
+            <Link to="/admin" className="hover:opacity-70">Admin</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

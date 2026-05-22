@@ -10,10 +10,10 @@ export function Header() {
   const router = useRouter();
   const location = useLocation();
   const [guestView, setGuestView] = useState<GuestViewMode>("green");
-  const isGuestPage = location.pathname === "/";
+  const isGuestPage = location.pathname === "/guest";
   const isManagerPage = location.pathname === "/manager";
   const isAdminPage = location.pathname === "/admin";
-  const isConventionalGuest = location.pathname === "/" && guestView === "conventional";
+  const isConventionalGuest = isGuestPage && guestView === "conventional";
   const headerAccent = isConventionalGuest ? "var(--eco-blue)" : "var(--eco-primary)";
   const shellTone = isConventionalGuest ? "var(--eco-blue)" : "var(--eco-primary)";
   const shellBackground = isConventionalGuest
@@ -27,8 +27,10 @@ export function Header() {
     return () => window.removeEventListener("eco-guest-view-change", onChange);
   }, []);
 
-  const goToPage = (to: "/" | "/manager" | "/admin") => {
-    if (to === "/") setRole("guest");
+  if (location.pathname === "/") return null;
+
+  const goToPage = (to: "/guest" | "/manager" | "/admin") => {
+    if (to === "/guest") setRole("guest");
     if (to === "/manager") setRole("manager");
     if (location.pathname !== to) router.navigate({ to });
   };
@@ -55,7 +57,7 @@ export function Header() {
           style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}
         >
           <button
-            onClick={() => goToPage("/")}
+            onClick={() => goToPage("/guest")}
             className="eco-nav-pill flex items-center gap-1 px-2.5 py-1.5 text-[0.7rem] sm:gap-1.5 sm:px-4 sm:py-2 sm:text-[0.82rem]"
             style={{
               backgroundColor: isGuestPage ? "var(--eco-ink)" : "transparent",
