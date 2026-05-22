@@ -1,6 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Droplet, Cloud, Train, Thermometer, Wind, BedDouble, Shirt } from "lucide-react";
+import {
+  Droplet,
+  Cloud,
+  Train,
+  Thermometer,
+  Wind,
+  BedDouble,
+  Bath,
+  Shirt,
+  Sparkles,
+} from "lucide-react";
 import { TreeField } from "@/components/TreeField";
 import { useConfig, useLiveCommitter, useLiveCustomer, useSimTime } from "@/lib/ecoHooks";
 import {
@@ -179,7 +189,7 @@ function Index() {
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <ToggleCard
-              icon={<BedDouble size={22} />}
+              icon={<Sparkles size={22} />}
               title="Request room cleaning"
               tooltip={impact.cleaning}
               active={!live.decisions.skipCleaning}
@@ -192,7 +202,7 @@ function Index() {
               onToggle={() => toggle("skipCleaning")}
             />
             <ToggleCard
-              icon={<Shirt size={22} />}
+              icon={<Bath size={22} />}
               title="Request towel change"
               tooltip={impact.towels}
               active={!live.decisions.skipTowels}
