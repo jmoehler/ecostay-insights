@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { AppConfig, DEFAULT_CONFIG, evalScoreFormula, saveConfig } from "@/config/appConfig";
 import { useConfig } from "@/lib/ecoHooks";
-import { resetAllData, resetLiveCustomer } from "@/lib/ecoStore";
+import { resetAllData, resetLiveGuest } from "@/lib/ecoStore";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -49,7 +49,7 @@ function AdminPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
         <p className="text-sm" style={{ color: "var(--eco-muted)" }}>
-          Edits save instantly and apply to both Customer and Manager views.
+          Edits save instantly and apply to both Guest and Manager views.
         </p>
       </div>
 
@@ -198,7 +198,7 @@ function AdminPage() {
 
       <Section title="Danger zone">
         <button
-          onClick={() => resetLiveCustomer(cfg)}
+          onClick={() => resetLiveGuest(cfg)}
           className="flex items-center justify-center gap-2 rounded-sm border py-3 text-sm font-medium transition-colors"
           style={{
             backgroundColor: "var(--background)",
@@ -207,7 +207,7 @@ function AdminPage() {
           }}
         >
           <RotateCcw size={16} />
-          Reset customer / New stay
+          Reset guest / New stay
         </button>
 
         <div
@@ -218,7 +218,7 @@ function AdminPage() {
           <div className="flex-1">
             <div className="font-medium">Reset all data</div>
             <div className="text-xs" style={{ color: "var(--eco-muted)" }}>
-              Clears the live customer, background simulation state, and resets every config value.
+              Clears the live guest, background simulation state, and resets every config value.
             </div>
           </div>
           <button

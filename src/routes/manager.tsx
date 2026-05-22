@@ -13,7 +13,7 @@ import {
   Legend,
 } from "recharts";
 import { Cloud, Droplet, Euro, Users, Train, BedDouble, Shirt, Wind } from "lucide-react";
-import { useConfig, useLiveCommitter, useLiveCustomer, useSimTime, useStays } from "@/lib/ecoHooks";
+import { useConfig, useLiveCommitter, useLiveGuest, useSimTime, useStays } from "@/lib/ecoHooks";
 import { computeDailySavings, computeScore } from "@/lib/ecoStore";
 
 export const Route = createFileRoute("/manager")({
@@ -36,7 +36,7 @@ function ManagerPage() {
   useLiveCommitter(cfg);
   const { day: simDay } = useSimTime(cfg);
   const stays = useStays(cfg, simDay);
-  const [live] = useLiveCustomer(cfg);
+  const [live] = useLiveGuest(cfg);
   const [bucket, setBucket] = useState<Bucket>("daily");
 
   const allDays = useMemo(() => {
@@ -229,7 +229,7 @@ function ManagerPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Manager dashboard</h1>
         <p className="text-sm" style={{ color: "var(--eco-muted)" }}>
-          Aggregated impact across background guests and the live customer stay.
+          Aggregated impact across background guests and the live guest stay.
         </p>
       </div>
 

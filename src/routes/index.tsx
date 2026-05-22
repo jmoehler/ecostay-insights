@@ -12,29 +12,29 @@ import {
   Sparkles,
 } from "lucide-react";
 import { TreeField } from "@/components/TreeField";
-import { useConfig, useLiveCommitter, useLiveCustomer, useSimTime } from "@/lib/ecoHooks";
+import { useConfig, useLiveCommitter, useLiveGuest, useSimTime } from "@/lib/ecoHooks";
 import {
   computeDailySavings,
   computeScore,
-  getCustomerView,
+  getGuestView,
   getSkipDefaultsForView,
-  setCustomerView,
+  setGuestView,
 } from "@/lib/ecoStore";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type CustomerView = "green" | "conventional";
+type GuestView = "green" | "conventional";
 
 function Index() {
   const [cfg] = useConfig();
   useLiveCommitter(cfg);
-  const [live, setLive] = useLiveCustomer(cfg);
-  const [view, setView] = useState<CustomerView>("green");
+  const [live, setLive] = useLiveGuest(cfg);
+  const [view, setView] = useState<GuestView>("green");
 
   useEffect(() => {
-    setView(getCustomerView());
+    setView(getGuestView());
   }, []);
 
   const { day: simDay, progress } = useSimTime(cfg);
@@ -90,9 +90,9 @@ function Index() {
     };
   }, [cfg]);
 
-  const applyViewDefaults = (nextView: CustomerView) => {
+  const applyViewDefaults = (nextView: GuestView) => {
     setView(nextView);
-    setCustomerView(nextView);
+    setGuestView(nextView);
     setLive({
       ...live,
       decisions: {

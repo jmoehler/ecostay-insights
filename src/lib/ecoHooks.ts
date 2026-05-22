@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { AppConfig, DEFAULT_CONFIG, loadConfig } from "@/config/appConfig";
 import {
   defaultDecisions,
-  LiveCustomer,
+  LiveGuest,
   Role,
   computeDailySavings,
-  getCustomerView,
+  getGuestView,
   getRole,
   getSkipDefaultsForView,
   getSimDay,
@@ -28,7 +28,7 @@ export function useConfig(): [AppConfig, (c: AppConfig) => void] {
 }
 
 export function useRoleState(): [Role, () => void] {
-  const [role, setR] = useState<Role>("customer");
+  const [role, setR] = useState<Role>("guest");
   useEffect(() => {
     setR(getRole());
     const onChange = () => setR(getRole());
@@ -67,7 +67,7 @@ export function useSimTime(cfg: AppConfig) {
   return { day, progress, remainingSec, clock: `${hoursLeft}h` };
 }
 
-function getInitialLive(cfg: AppConfig): LiveCustomer {
+function getInitialLive(cfg: AppConfig): LiveGuest {
   return {
     stayStartDay: 0,
     stayStartProgress: 0,
@@ -77,15 +77,15 @@ function getInitialLive(cfg: AppConfig): LiveCustomer {
   };
 }
 
-export function useLiveCustomer(cfg: AppConfig) {
-  const [live, setLive] = useState<LiveCustomer>(() => getInitialLive(cfg));
+export function useLiveGuest(cfg: AppConfig) {
+  const [live, setLive] = useState<LiveGuest>(() => getInitialLive(cfg));
   useEffect(() => {
     setLive(loadLive(cfg));
     const onChange = () => setLive(loadLive(cfg));
     window.addEventListener("eco-live-change", onChange);
     return () => window.removeEventListener("eco-live-change", onChange);
   }, [cfg]);
-  return [live, (l: LiveCustomer) => saveLive(l)] as const;
+  return [live, (l: LiveGuest) => saveLive(l)] as const;
 }
 
 export function useStays(cfg: AppConfig, simDay: number): Stay[] {
@@ -101,7 +101,7 @@ export function useStays(cfg: AppConfig, simDay: number): Stay[] {
   return stays;
 }
 
-// Commit-on-day-change effect for the live customer.
+// Commit-on-day-change effect for the live guest.
 export function useLiveCommitter(cfg: AppConfig) {
   useEffect(() => {
     const tick = () => {
@@ -109,7 +109,7 @@ export function useLiveCommitter(cfg: AppConfig) {
       const now = getSimDay(cfg);
       // Add train bonus once on first ever tick of stay
       let changed = false;
-      const updated: LiveCustomer = { ...live, history: [...live.history] };
+      const updated: LiveGuest = { ...live, history: [...live.history] };
       if (!updated.trainAdded && updated.decisions.arrivedByTrain) {
         // No history entry yet — train counted separately on day 0 commit
       }
@@ -141,7 +141,7 @@ export function useLiveCommitter(cfg: AppConfig) {
         // reset transient toggles for new day
         updated.decisions = {
           ...updated.decisions,
-          ...getSkipDefaultsForView(getCustomerView()),
+          ...getSkipDefaultsForView(getGuestView()),
           thermostat: cfg.savings.thermostatBaseline,
           acOn: false,
         };

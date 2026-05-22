@@ -1,4 +1,4 @@
-// Central config — single source of truth for both Customer UI and Admin panel.
+// Central config — single source of truth for both Guest UI and Admin panel.
 // All values persisted to localStorage. Admin writes via setConfig().
 
 export type AppConfig = {

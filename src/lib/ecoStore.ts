@@ -32,7 +32,7 @@ export type Stay = {
   days: DailySavings[];
 };
 
-export type LiveCustomer = {
+export type LiveGuest = {
   stayStartDay: number;
   stayStartProgress: number; // 0..1 progress within stayStartDay when guest checked in
   decisions: Decisions;
@@ -98,12 +98,12 @@ export function getSimDayProgress(cfg: AppConfig): number {
   return ((Date.now() - getTimeAnchor()) % dayMs) / dayMs;
 }
 
-// ===== Live customer =====
-const LIVE_KEY = "hotel_eco_live_customer_v1";
+// ===== Live guest =====
+const LIVE_KEY = "hotel_eco_live_guest_v1";
 
-export type CustomerViewMode = "green" | "conventional";
+export type GuestViewMode = "green" | "conventional";
 
-export function getSkipDefaultsForView(view: CustomerViewMode) {
+export function getSkipDefaultsForView(view: GuestViewMode) {
   const shouldSkipByDefault = view === "green";
   return {
     skipCleaning: shouldSkipByDefault,
@@ -114,7 +114,7 @@ export function getSkipDefaultsForView(view: CustomerViewMode) {
 
 export function defaultDecisions(
   cfg: AppConfig,
-  view: CustomerViewMode = "green",
+  view: GuestViewMode = "green",
 ): Decisions {
   const skipDefaults = getSkipDefaultsForView(view);
   return {
@@ -125,7 +125,7 @@ export function defaultDecisions(
   };
 }
 
-export function loadLive(cfg: AppConfig): LiveCustomer {
+export function loadLive(cfg: AppConfig): LiveGuest {
   if (typeof window === "undefined") {
     return {
       stayStartDay: 0,
@@ -145,16 +145,16 @@ export function loadLive(cfg: AppConfig): LiveCustomer {
           typeof p.stayStartProgress === "number"
             ? Math.max(0, Math.min(1, p.stayStartProgress))
             : 0,
-        decisions: { ...defaultDecisions(cfg, getCustomerView()), ...(p.decisions ?? {}) },
+        decisions: { ...defaultDecisions(cfg, getGuestView()), ...(p.decisions ?? {}) },
         history: Array.isArray(p.history) ? p.history : [],
         trainAdded: !!p.trainAdded,
       };
     }
   } catch {}
-  const fresh: LiveCustomer = {
+  const fresh: LiveGuest = {
     stayStartDay: getSimDay(cfg),
     stayStartProgress: getSimDayProgress(cfg),
-    decisions: defaultDecisions(cfg, getCustomerView()),
+    decisions: defaultDecisions(cfg, getGuestView()),
     history: [],
     trainAdded: false,
   };
@@ -162,17 +162,17 @@ export function loadLive(cfg: AppConfig): LiveCustomer {
   return fresh;
 }
 
-export function saveLive(l: LiveCustomer) {
+export function saveLive(l: LiveGuest) {
   if (typeof window === "undefined") return;
   localStorage.setItem(LIVE_KEY, JSON.stringify(l));
   window.dispatchEvent(new CustomEvent("eco-live-change"));
 }
 
-export function resetLiveCustomer(cfg: AppConfig) {
-  const fresh: LiveCustomer = {
+export function resetLiveGuest(cfg: AppConfig) {
+  const fresh: LiveGuest = {
     stayStartDay: getSimDay(cfg),
     stayStartProgress: getSimDayProgress(cfg),
-    decisions: defaultDecisions(cfg, getCustomerView()),
+    decisions: defaultDecisions(cfg, getGuestView()),
     history: [],
     trainAdded: false,
   };
@@ -376,10 +376,10 @@ export function resetAllData() {
 
 // ===== Role =====
 const ROLE_KEY = "hotel_eco_role_v1";
-export type Role = "customer" | "manager";
+export type Role = "guest" | "manager";
 export function getRole(): Role {
-  if (typeof window === "undefined") return "customer";
-  return (localStorage.getItem(ROLE_KEY) as Role) || "customer";
+  if (typeof window === "undefined") return "guest";
+  return (localStorage.getItem(ROLE_KEY) as Role) || "guest";
 }
 export function setRole(r: Role) {
   if (typeof window === "undefined") return;
@@ -387,17 +387,17 @@ export function setRole(r: Role) {
   window.dispatchEvent(new CustomEvent("eco-role-change"));
 }
 
-const CUSTOMER_VIEW_KEY = "hotel_eco_customer_view_v1";
+const GUEST_VIEW_KEY = "hotel_eco_guest_view_v1";
 
-export function getCustomerView(): CustomerViewMode {
+export function getGuestView(): GuestViewMode {
   if (typeof window === "undefined") return "green";
-  return localStorage.getItem(CUSTOMER_VIEW_KEY) === "conventional"
+  return localStorage.getItem(GUEST_VIEW_KEY) === "conventional"
     ? "conventional"
     : "green";
 }
 
-export function setCustomerView(v: CustomerViewMode) {
+export function setGuestView(v: GuestViewMode) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(CUSTOMER_VIEW_KEY, v);
-  window.dispatchEvent(new CustomEvent("eco-customer-view-change"));
+  localStorage.setItem(GUEST_VIEW_KEY, v);
+  window.dispatchEvent(new CustomEvent("eco-guest-view-change"));
 }

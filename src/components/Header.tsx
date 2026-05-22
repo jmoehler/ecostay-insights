@@ -1,7 +1,7 @@
 import { Link, useRouter, useLocation } from "@tanstack/react-router";
 import { Settings, User, BarChart3, Leaf } from "lucide-react";
 import { useConfig, useSimTime } from "@/lib/ecoHooks";
-import { setRole, getCustomerView, CustomerViewMode } from "@/lib/ecoStore";
+import { setRole, getGuestView, GuestViewMode } from "@/lib/ecoStore";
 import { useEffect, useState } from "react";
 
 export function Header() {
@@ -9,26 +9,26 @@ export function Header() {
   const { day, clock } = useSimTime(cfg);
   const router = useRouter();
   const location = useLocation();
-  const [customerView, setCustomerView] = useState<CustomerViewMode>("green");
-  const isCustomerPage = location.pathname === "/";
+  const [guestView, setGuestView] = useState<GuestViewMode>("green");
+  const isGuestPage = location.pathname === "/";
   const isManagerPage = location.pathname === "/manager";
   const isAdminPage = location.pathname === "/admin";
-  const isConventionalCustomer = location.pathname === "/" && customerView === "conventional";
-  const headerAccent = isConventionalCustomer ? "var(--eco-blue)" : "var(--eco-primary)";
-  const shellTone = isConventionalCustomer ? "var(--eco-blue)" : "var(--eco-primary)";
-  const shellBackground = isConventionalCustomer
+  const isConventionalGuest = location.pathname === "/" && guestView === "conventional";
+  const headerAccent = isConventionalGuest ? "var(--eco-blue)" : "var(--eco-primary)";
+  const shellTone = isConventionalGuest ? "var(--eco-blue)" : "var(--eco-primary)";
+  const shellBackground = isConventionalGuest
     ? "linear-gradient(175deg, color-mix(in oklab, var(--eco-surface) 92%, white) 0%, color-mix(in oklab, var(--eco-shell) 70%, white) 100%)"
     : "linear-gradient(175deg, color-mix(in oklab, var(--eco-surface) 92%, white) 0%, color-mix(in oklab, var(--eco-primary) 10%, white) 100%)";
 
   useEffect(() => {
-    setCustomerView(getCustomerView());
-    const onChange = () => setCustomerView(getCustomerView());
-    window.addEventListener("eco-customer-view-change", onChange);
-    return () => window.removeEventListener("eco-customer-view-change", onChange);
+    setGuestView(getGuestView());
+    const onChange = () => setGuestView(getGuestView());
+    window.addEventListener("eco-guest-view-change", onChange);
+    return () => window.removeEventListener("eco-guest-view-change", onChange);
   }, []);
 
   const goToPage = (to: "/" | "/manager" | "/admin") => {
-    if (to === "/") setRole("customer");
+    if (to === "/") setRole("guest");
     if (to === "/manager") setRole("manager");
     if (location.pathname !== to) router.navigate({ to });
   };
@@ -68,11 +68,11 @@ export function Header() {
             onClick={() => goToPage("/")}
             className="eco-nav-pill flex items-center gap-1.5"
             style={{
-              backgroundColor: isCustomerPage ? "var(--eco-ink)" : "transparent",
-              color: isCustomerPage ? "#f7fafc" : "var(--eco-muted)",
+              backgroundColor: isGuestPage ? "var(--eco-ink)" : "transparent",
+              color: isGuestPage ? "#f7fafc" : "var(--eco-muted)",
             }}
           >
-            <User size={14} /> Customer
+            <User size={14} /> Guest
           </button>
           <button
             onClick={() => goToPage("/manager")}
