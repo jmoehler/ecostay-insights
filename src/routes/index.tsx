@@ -434,3 +434,133 @@ function Landing() {
     </div>
   );
 }
+
+function ManagerMockup() {
+  return (
+    <div className="relative isolate">
+      {/* backdrop glow */}
+      <div
+        aria-hidden
+        className="absolute -inset-6 -z-10 rounded-[2.5rem] blur-2xl"
+        style={{
+          background:
+            "radial-gradient(60% 60% at 30% 30%, color-mix(in oklab, var(--eco-primary) 22%, transparent), transparent 70%), radial-gradient(50% 50% at 80% 70%, color-mix(in oklab, var(--eco-blue) 20%, transparent), transparent 70%)",
+        }}
+      />
+
+      {/* main dashboard card */}
+      <div
+        className="relative rounded-3xl border bg-white/95 p-5 shadow-2xl backdrop-blur sm:p-6"
+        style={{ borderColor: "var(--border)", boxShadow: "0 40px 80px -40px rgba(17,37,56,0.45)" }}
+      >
+        {/* window chrome */}
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#ff5f57" }} />
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#febc2e" }} />
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#28c840" }} />
+          </div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: "var(--eco-muted)" }}>
+            Green Proof · Manager
+          </div>
+          <div className="text-[10px] font-semibold" style={{ color: "var(--eco-muted)" }}>Last 120 days</div>
+        </div>
+
+        {/* KPI row */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { l: "CO₂ saved", v: "162.5 t", c: "var(--eco-primary)" },
+            { l: "Water saved", v: "266 kL", c: "var(--eco-blue)" },
+            { l: "€ generated", v: "48.2k", c: "var(--eco-ink)" },
+          ].map((k) => (
+            <div
+              key={k.l}
+              className="rounded-2xl border p-3"
+              style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in oklab, var(--eco-surface) 70%, white)" }}
+            >
+              <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--eco-muted)" }}>{k.l}</div>
+              <div className="mt-1 text-xl font-bold" style={{ color: k.c }}>{k.v}</div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: "color-mix(in oklab, var(--eco-muted) 15%, white)" }}>
+                <div className="h-full rounded-full" style={{ width: "72%", backgroundColor: k.c }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* chart */}
+        <div className="mt-4 rounded-2xl border p-4" style={{ borderColor: "var(--border)" }}>
+          <div className="mb-3 flex items-center justify-between">
+            <div className="text-xs font-bold" style={{ color: "var(--eco-text)" }}>Impact trend</div>
+            <div className="flex items-center gap-2 text-[10px] font-semibold" style={{ color: "var(--eco-muted)" }}>
+              <span className="inline-flex items-center gap-1"><span className="h-1.5 w-3 rounded-full" style={{ backgroundColor: "var(--eco-primary)" }} /> CO₂</span>
+              <span className="inline-flex items-center gap-1"><span className="h-1.5 w-3 rounded-full" style={{ backgroundColor: "var(--eco-blue)" }} /> Water</span>
+            </div>
+          </div>
+          <svg viewBox="0 0 300 90" className="h-24 w-full">
+            <defs>
+              <linearGradient id="gp-grad" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="var(--eco-primary)" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="var(--eco-primary)" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path d="M0,70 C30,60 50,45 75,48 C100,51 120,30 150,28 C180,26 200,40 225,32 C250,24 275,18 300,12 L300,90 L0,90 Z" fill="url(#gp-grad)" />
+            <path d="M0,70 C30,60 50,45 75,48 C100,51 120,30 150,28 C180,26 200,40 225,32 C250,24 275,18 300,12" fill="none" stroke="var(--eco-primary)" strokeWidth="2" />
+            <path d="M0,78 C40,72 70,68 110,62 C150,56 190,52 230,46 C260,42 285,38 300,36" fill="none" stroke="var(--eco-blue)" strokeWidth="2" strokeDasharray="3 3" />
+          </svg>
+        </div>
+
+        {/* recent rows */}
+        <div className="mt-4 rounded-2xl border" style={{ borderColor: "var(--border)" }}>
+          <div className="flex items-center justify-between border-b px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider" style={{ borderColor: "var(--border)", color: "var(--eco-muted)" }}>
+            <span>Recent actions</span>
+            <span>Impact</span>
+          </div>
+          {[
+            { r: "Room 214 · cleaning skipped", k: "−2.1 kg CO₂" },
+            { r: "Room 108 · towel reuse", k: "−18 L water" },
+            { r: "Arrival by train · Guest #4821", k: "−47 kg CO₂" },
+          ].map((row) => (
+            <div key={row.r} className="flex items-center justify-between border-b px-4 py-2.5 text-xs last:border-b-0" style={{ borderColor: "var(--border)" }}>
+              <span style={{ color: "var(--eco-text)" }}>{row.r}</span>
+              <span className="font-bold" style={{ color: "var(--eco-primary)" }}>{row.k}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* floating EmpCo card */}
+      <div
+        className="absolute -right-4 -top-5 hidden rounded-2xl border bg-white p-3 shadow-xl sm:flex sm:items-center sm:gap-3"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <div
+          className="grid h-9 w-9 place-items-center rounded-xl"
+          style={{ backgroundColor: "color-mix(in oklab, var(--eco-primary) 14%, white)", color: "var(--eco-primary)" }}
+        >
+          <ShieldCheck size={16} />
+        </div>
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--eco-muted)" }}>EmpCo</div>
+          <div className="text-xs font-bold" style={{ color: "var(--eco-text)" }}>Report ready</div>
+        </div>
+      </div>
+
+      {/* floating tree card */}
+      <div
+        className="absolute -left-5 -bottom-6 hidden rounded-2xl border bg-white p-3 shadow-xl sm:flex sm:items-center sm:gap-3"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <div
+          className="grid h-9 w-9 place-items-center rounded-xl"
+          style={{ backgroundColor: "color-mix(in oklab, var(--eco-primary) 14%, white)", color: "var(--eco-primary)" }}
+        >
+          <Sprout size={16} />
+        </div>
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--eco-muted)" }}>Trees grown</div>
+          <div className="text-xs font-bold" style={{ color: "var(--eco-text)" }}>1,284 this quarter</div>
+        </div>
+      </div>
+    </div>
+  );
+}
