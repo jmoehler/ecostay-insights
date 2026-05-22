@@ -185,6 +185,9 @@ function Index() {
               active={!live.decisions.skipCleaning}
               activeLabel="Requested"
               inactiveLabel="Skipped"
+              compactActiveLabel="Req"
+              compactInactiveLabel="Skip"
+              highlightWhenActive={false}
               accentColor={accentColor}
               onToggle={() => toggle("skipCleaning")}
             />
@@ -195,6 +198,9 @@ function Index() {
               active={!live.decisions.skipTowels}
               activeLabel="Requested"
               inactiveLabel="Skipped"
+              compactActiveLabel="Req"
+              compactInactiveLabel="Skip"
+              highlightWhenActive={false}
               accentColor={accentColor}
               onToggle={() => toggle("skipTowels")}
             />
@@ -205,6 +211,9 @@ function Index() {
               active={!live.decisions.skipLinen}
               activeLabel="Requested"
               inactiveLabel="Skipped"
+              compactActiveLabel="Req"
+              compactInactiveLabel="Skip"
+              highlightWhenActive={false}
               accentColor={accentColor}
               onToggle={() => toggle("skipLinen")}
             />
@@ -331,6 +340,9 @@ function ToggleCard({
   active,
   activeLabel = "On",
   inactiveLabel = "Off",
+  compactActiveLabel,
+  compactInactiveLabel,
+  highlightWhenActive = true,
   accentColor,
   onToggle,
 }: {
@@ -340,48 +352,74 @@ function ToggleCard({
   active: boolean;
   activeLabel?: string;
   inactiveLabel?: string;
+  compactActiveLabel?: string;
+  compactInactiveLabel?: string;
+  highlightWhenActive?: boolean;
   accentColor: string;
   onToggle: () => void;
 }) {
+  const highlighted = highlightWhenActive ? active : !active;
+  const fullStatusLabel = active ? activeLabel : inactiveLabel;
+  const defaultCompactLabel = (label: string) => {
+    const normalized = label.trim().toLowerCase();
+    if (normalized === "requested") return "Req.";
+    if (normalized === "skipped") return "Skip";
+    if (label.length <= 6) return label;
+    return `${label.slice(0, 4)}.`;
+  };
+  const compactStatusLabel = active
+    ? (compactActiveLabel ?? defaultCompactLabel(activeLabel))
+    : (compactInactiveLabel ?? defaultCompactLabel(inactiveLabel));
+
   return (
     <button
       onClick={onToggle}
-      className="group flex flex-col gap-3 rounded-3xl border p-4 text-left transition-all active:scale-[0.98]"
+      className="group flex flex-col gap-2.5 rounded-3xl border p-3.5 text-left transition-all active:scale-[0.98] sm:gap-3 sm:p-4"
       style={{
-        backgroundColor: active
+        backgroundColor: highlighted
           ? `color-mix(in oklab, ${accentColor} 10%, white)`
           : "color-mix(in oklab, var(--eco-surface) 88%, white)",
-        borderColor: active
+        borderColor: highlighted
           ? `color-mix(in oklab, ${accentColor} 38%, white)`
           : "color-mix(in oklab, var(--eco-ink) 10%, transparent)",
       }}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-2">
         <div
-          className="flex h-11 w-11 items-center justify-center rounded-full"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-11 sm:w-11"
           style={{
-            backgroundColor: active
+            backgroundColor: highlighted
               ? accentColor
               : `color-mix(in oklab, ${accentColor} 10%, white)`,
-            color: active ? "var(--primary-foreground)" : "var(--eco-muted)",
+            color: highlighted ? "var(--primary-foreground)" : "var(--eco-muted)",
           }}
         >
           {icon}
         </div>
         <span
-          className="rounded-full px-2.5 py-1 text-xs font-medium"
+          className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium leading-none sm:gap-1.5 sm:px-2.5 sm:text-xs"
           style={{
-            backgroundColor: active
+            backgroundColor: highlighted
               ? `color-mix(in oklab, ${accentColor} 24%, white)`
               : `color-mix(in oklab, ${accentColor} 7%, white)`,
-            color: active ? accentColor : "var(--eco-muted)",
+            color: highlighted ? accentColor : "var(--eco-muted)",
           }}
+          aria-label={fullStatusLabel}
         >
-          {active ? activeLabel : inactiveLabel}
+          <span
+            className="hidden h-1.5 w-1.5 rounded-full sm:block"
+            style={{
+              backgroundColor: highlighted
+                ? accentColor
+                : "color-mix(in oklab, var(--eco-ink) 24%, transparent)",
+            }}
+          />
+          <span className="hidden sm:inline">{fullStatusLabel}</span>
+          <span className="sm:hidden">{compactStatusLabel}</span>
         </span>
       </div>
       <div>
-        <div className="font-medium">{title}</div>
+        <div className="text-[15px] font-medium leading-snug sm:text-base">{title}</div>
         <div className="text-xs" style={{ color: "var(--eco-muted)" }}>
           {tooltip}
         </div>
