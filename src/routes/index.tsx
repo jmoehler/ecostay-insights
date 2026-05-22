@@ -16,7 +16,6 @@ import {
   Zap,
 } from "lucide-react";
 import heroImg from "@/assets/landing-hero.jpg";
-import managerImg from "@/assets/landing-manager.jpg";
 import guestImg from "@/assets/landing-guest.jpg";
 
 export const Route = createFileRoute("/")({
@@ -206,9 +205,7 @@ function Landing() {
       <section id="hotels" className="px-4 pb-20 sm:px-8">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div className="order-2 lg:order-1">
-            <div className="overflow-hidden rounded-3xl shadow-xl">
-              <img src={managerImg} alt="Manager reviewing the Green Proof dashboard" width={1400} height={1000} loading="lazy" className="h-full w-full object-cover" />
-            </div>
+            <ManagerMockup />
           </div>
           <div className="order-1 lg:order-2">
             <div className="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "var(--eco-primary)" }}>
